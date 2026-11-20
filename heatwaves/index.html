@@ -57,6 +57,9 @@ body.render #cv{height:auto;width:1080px;border-radius:0;box-shadow:none}
     <h1>HEAT WAVES <span>STUDIO</span></h1>
     <p class="sub">Animation style « noir &amp; or » — 9:16, prête pour TikTok.</p>
     <section>
+      <label style="margin-bottom:10px">Version
+        <select id="version"><option value="song">Chanson entière (calée sur ton MP3)</option><option value="short">Version courte 45 s (TikTok)</option></select>
+      </label>
       <div class="row"><button id="play" class="main">▶ Lecture</button><button id="restart">⟲ Début</button><span id="time">0:00.0</span></div>
       <input type="range" id="seek" min="0" max="45" step="0.01" value="0" style="margin-top:10px">
       <p class="note" id="sceneName"></p>
@@ -65,11 +68,11 @@ body.render #cv{height:auto;width:1080px;border-radius:0;box-shadow:none}
       <h2>1 · Musique</h2>
       <label class="file">🎵 Choisir ton fichier audio de Heat Waves<input type="file" id="audioFile" accept="audio/*,video/*"></label>
       <p class="note" id="audioName">Aucun son chargé : l'aperçu tourne en silence.</p>
-      <div class="grid2">
+      <div class="grid2" id="startRow">
         <label>Commencer le son à (secondes)<input type="number" id="audioStart" value="0" step="0.1" min="0"></label>
         <label>Tempo (BPM)<input type="number" id="bpm" value="81" step="0.5" min="40" max="200"></label>
       </div>
-      <p class="note">Si ton fichier est la chanson entière, mets ici la seconde où commence le passage que tu veux (ex. le refrain).</p>
+      <p class="note">Version chanson entière : charge le fichier « Heat Waves – Glass Animals x HighCloud Cover », tout est déjà calé dessus.</p>
     </section>
     <section>
       <h2>2 · Paroles</h2>
@@ -91,7 +94,7 @@ body.render #cv{height:auto;width:1080px;border-radius:0;box-shadow:none}
         <select id="quality"><option value="1080">1080 × 1920</option><option value="720">720 × 1280 (PC lent)</option></select>
         <button id="exportBtn" class="main">⬇ Exporter la vidéo</button>
       </div>
-      <p class="note" id="exportInfo">L'export se fait en temps réel (≈ 45 s) : laisse l'onglet ouvert et au premier plan.</p>
+      <p class="note" id="exportInfo">L'export se fait en temps réel (la durée de la vidéo) : laisse l'onglet ouvert et au premier plan.</p>
       <div id="dl"></div>
     </section>
   </aside>
@@ -108,6 +111,7 @@ const PI = Math.PI, TAU = Math.PI * 2;
 
 // ---------- réglages ----------
 const CFG = {
+  mode: 'short',      // 'short' (45 s) ou 'song' (chanson entière calée sur le MP3)
   bpm: 81,            // tempo de Heat Waves (~81 BPM)
   showTitle: true,
   lyricsText: '',
@@ -584,7 +588,7 @@ function drawGirl(c, o) {
   let by = o.bob ?? girlBob(T);
   c.save(); c.translate(o.x, o.y); c.scale(s, s);
   if (o.alpha != null) c.globalAlpha *= o.alpha;
-  c.fillStyle = 'rgba(0,0,0,0.5)'; c.beginPath(); c.ellipse(0, 2, 130, 20, 0, 0, TAU); c.fill();
+  if (!o.noShadow) { c.fillStyle = 'rgba(0,0,0,0.5)'; c.beginPath(); c.ellipse(0, 2, 130, 20, 0, 0, TAU); c.fill(); }
   let lL = 0, lR = 0;
   if (o.walk != null) { lL = Math.max(0, Math.sin(o.walk)) * 18; lR = Math.max(0, -Math.sin(o.walk)) * 18; by += -Math.abs(Math.sin(o.walk)) * 6; }
   for (const side of [-1, 1]) {
@@ -631,6 +635,7 @@ function drawGirl(c, o) {
     // yeux
     for (const sd of [-1, 1]) {
       const exx = fx + sd * 22 - Math.max(0, sd * turn) * 4, eyy = -618;
+      if (ex.startsWith('sleep')) { c.strokeStyle = '#000'; c.lineWidth = 3.5; c.beginPath(); c.arc(exx, eyy - 4, 11, PI * .15, PI * .85); c.stroke(); c.strokeStyle = '#111'; c.lineWidth = 4; c.beginPath(); c.moveTo(exx + sd * 14, -637); c.lineTo(exx - sd * 11, -639); c.stroke(); continue; }
       const op = blinkAmt(T, 1.3);
       c.save(); c.translate(exx, eyy); c.scale(1, op);
       c.fillStyle = '#efede8'; c.beginPath(); c.ellipse(0, 0, 11.5, 7.5, 0, 0, TAU); c.fill();
@@ -647,7 +652,7 @@ function drawGirl(c, o) {
     c.strokeStyle = '#000'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(fx + 2, -612); c.lineTo(fx - 4, -592); c.lineTo(fx + 4, -589); c.stroke();
     c.lineWidth = 3; c.beginPath();
     if (ex === 'sad') { c.moveTo(fx - 12, -568); c.quadraticCurveTo(fx, -578, fx + 12, -568); }
-    else if (ex === 'smile') { c.moveTo(fx - 13, -574); c.quadraticCurveTo(fx, -562, fx + 13, -574); }
+    else if (ex === 'smile' || ex === 'sleep') { c.moveTo(fx - 13, -574); c.quadraticCurveTo(fx, -562, fx + 13, -574); }
     else { c.moveTo(fx - 11, -571); c.lineTo(fx + 11, -571); }
     c.stroke();
     if (o.tears) drawTears(c, fx, T, o.tears);
@@ -939,8 +944,8 @@ const SCENES = [
       if (dark > .02) drawSlit(c, h.slit.x, h.slit.y, 1, 1.3 * (1 - smooth(d - .3, d - .02, lt)), T);
     } },
 ];
-function timeline() { let acc = 0; return SCENES.map(s => { const a = acc * BAR(); acc += s.bars; return { s, t0: a, t1: acc * BAR() }; }); }
-function duration() { return SCENES.reduce((a, s) => a + s.bars, 0) * BAR(); }
+function timeline() { if (CFG.mode === 'song') return songTimeline(); let acc = 0; return SCENES.map(s => { const a = acc * BAR(); acc += s.bars; return { s, t0: a, t1: acc * BAR() }; }); }
+function duration() { if (CFG.mode === 'song') return SONG_END; return SCENES.reduce((a, s) => a + s.bars, 0) * BAR(); }
 
 function camTransform(c, cam, T) {
   if (!cam) return;
@@ -967,8 +972,8 @@ function parseLyrics(src) {
   for (const raw of (src || '').split(/\r?\n/)) {
     const line = raw.trim(); if (!line || line.startsWith('#')) continue;
     const i = line.indexOf('|');
-    if (i < 0) { out.push({ t: null, text: line }); continue; }
-    const t = parseTime(line.slice(0, i)); out.push({ t, text: line.slice(i + 1).trim() });
+    if (i < 0) { out.push({ t: null, text: line.replace(/(^|\s)#.*$/, '').trim() }); continue; }
+    const t = parseTime(line.slice(0, i)); out.push({ t, text: line.slice(i + 1).replace(/(^|\s)#.*$/, '').trim() });
   }
   return out;
 }
@@ -976,7 +981,8 @@ function captionList() {
   const L = parseLyrics(CFG.lyricsText).filter(l => l.t != null).sort((a, b) => a.t - b.t);
   const res = [];
   for (let i = 0; i < L.length; i++) { if (!L[i].text) continue; res.push({ t: L[i].t, end: i + 1 < L.length ? L[i + 1].t : Math.min(L[i].t + 5, duration()), text: L[i].text.toUpperCase() }); }
-  if (CFG.showTitle) { const first = res.length ? res[0].t : 99; if (first > 1.2) res.unshift({ t: .35, end: Math.min(4.7, first), text: 'GLASS ANIMALS *HEAT WAVES*' }); }
+  if (CFG.showTitle && CFG.mode === 'song' && typeof SONG_TITLE !== 'undefined') res.push({ t: SONG_TITLE.t0, end: SONG_TITLE.t1, text: 'GLASS ANIMALS *HEAT WAVES*' });
+  else if (CFG.showTitle) { const first = res.length ? res[0].t : 99; if (first > 1.2) res.unshift({ t: .35, end: Math.min(4.7, first), text: 'GLASS ANIMALS *HEAT WAVES*' }); }
   return res;
 }
 function tokenize(text) {
@@ -1053,7 +1059,7 @@ function renderAt(T) {
   let i = TL.findIndex(x => T < x.t1); if (i < 0) i = TL.length - 1;
   const cur = TL[i], lt = T - cur.t0, TR = .3;
   drawSceneTo(OX, cur.s, lt, cur.t1 - cur.t0, T);
-  if (i > 0 && lt < TR) {
+  if (i > 0 && lt < TR && !cur.cut) {
     const pv = TL[i - 1]; drawSceneTo(SCBX, pv.s, T - pv.t0, pv.t1 - pv.t0, T);
     OX.setTransform(1, 0, 0, 1, 0, 0); OX.globalAlpha = 1 - ease(lt / TR); OX.drawImage(SCB, 0, 0); OX.globalAlpha = 1;
   }
@@ -1061,6 +1067,438 @@ function renderAt(T) {
   drawCaptions(OX, T, CAPLIST);
   return OUT;
 }
+
+'use strict';
+/* =====================================================================
+   VERSION « CHANSON ENTIÈRE » : un plan par ligne chantée.
+   Les plans sont construits à partir de SONG_SHOTS (temps absolus en s,
+   calés sur le fichier audio). Chaque gabarit (TPL.xxx) reçoit ses
+   options + son début/fin, et peut déclencher une action à un instant
+   précis (ex. les larmes qui coulent pile sur le mot chanté).
+   ===================================================================== */
+
+// ---------- nouveaux éléments de dessin ----------
+function cloudCircles(cx, cy, w, h) {
+  const L = [];
+  const n = 10;
+  for (let k = 0; k < n; k++) { const a = k / n * TAU; L.push([cx + Math.cos(a) * w * .36, cy + Math.sin(a) * h * .3, (k % 2 ? .2 : .25) * Math.min(w, h * 1.5)]); }
+  L.push([cx, cy, Math.min(w, h) * .38]);
+  return L;
+}
+function circlesPath(L, grow = 0) { const p = new Path2D(); for (const [x, y, r] of L) { p.moveTo(x + r + grow, y); p.arc(x, y, r + grow, 0, TAU); } return p; }
+function drawThought(c, fromX, fromY, cx, cy, w, h, k, T, inner) {
+  if (k <= 0) return;
+  c.save(); c.globalAlpha *= clamp(k * 1.4);
+  const dots = [[.15, 14], [.32, 22], [.5, 30]];
+  for (const [u, r] of dots) { if (k < u) continue; const x = lerp(fromX, cx - w * .15, u + .1), y = lerp(fromY, cy + h * .45, u + .1); const p = new Path2D(); p.arc(x, y, r, 0, TAU); paint(c, p, { fill: '#1b150e', stroke: '#d8b273', lw: 5 }); }
+  const s = easeOut(clamp((k - .35) / .65));
+  if (s > 0) {
+    c.translate(cx, cy); c.scale(s, s); c.translate(-cx, -cy);
+    const L = cloudCircles(cx, cy, w, h);
+    c.save(); c.shadowColor = 'rgba(255,200,120,.6)'; c.shadowBlur = 50; c.fillStyle = '#d8b273'; c.fill(circlesPath(L, 7)); c.restore();
+    c.fillStyle = '#140d06'; c.fill(circlesPath(L, 3));
+    const cp = circlesPath(L, 0);
+    c.save(); c.clip(cp);
+    const g = c.createRadialGradient(cx, cy, 10, cx, cy, w * .6); g.addColorStop(0, '#7a5a33'); g.addColorStop(1, '#22190f');
+    c.fillStyle = g; c.fillRect(cx - w, cy - h, w * 2, h * 2);
+    inner && inner(c);
+    c.restore();
+  }
+  c.restore();
+}
+function drawSilhouette(c, x, y, s, a) {
+  c.save(); c.globalAlpha *= a; c.translate(x, y); c.scale(s, s);
+  const p = new Path2D(); p.arc(0, -560, 58, 0, TAU);
+  p.moveTo(-120, -470); p.quadraticCurveTo(0, -500, 120, -470); p.lineTo(105, -220); p.lineTo(70, -220); p.lineTo(64, 0); p.lineTo(8, 0); p.lineTo(0, -200); p.lineTo(-8, 0); p.lineTo(-64, 0); p.lineTo(-70, -220); p.lineTo(-105, -220); p.closePath();
+  c.fillStyle = 'rgba(255,230,180,.55)'; c.save(); c.translate(-4, 0); c.fill(p); c.restore();
+  c.fillStyle = '#17110a'; c.fill(p);
+  c.restore();
+}
+function seatedLegs(c, x, base, s) {
+  for (const sd of [-1, 1]) {
+    const lx = x + sd * 40 * s;
+    c.fillStyle = '#141414'; c.strokeStyle = '#000'; c.lineWidth = 3;
+    const lg = new Path2D(); lg.roundRect(lx - 30 * s, base - 120, 60 * s, 90, 8); c.fill(lg); c.stroke(lg);
+    const sh = new Path2D(); sh.roundRect(lx - 48 * s, base - 46, 96 * s, 46, [24, 24, 8, 8]); paint(c, sh, { fill: '#e9e7e2', stroke: '#000', lw: 3 });
+    c.fillStyle = '#c29b5f'; c.fillRect(lx - 45 * s, base - 10, 90 * s, 7);
+  }
+}
+function drawCouch(c, x, base, w, part) {
+  // part 'back' : dossier (derrière les persos) ; 'front' : assise + accoudoirs (devant)
+  if (part === 'back') {
+    const b = new Path2D(); b.roundRect(x - w / 2, base - 470, w, 300, [60, 60, 10, 10]);
+    paint(c, b, { fill: goldGrad(c, x - w / 2, x + w / 2, 1), dots: PAT.dark, dx: x + w * .15, da: .65, stroke: '#140d06', lw: 4 });
+    c.strokeStyle = 'rgba(30,18,6,.6)'; c.lineWidth = 3;
+    for (let k = 1; k < 4; k++) { const xx = x - w / 2 + w * k / 4; c.beginPath(); c.moveTo(xx, base - 440); c.lineTo(xx, base - 190); c.stroke(); }
+    return;
+  }
+  const seat = new Path2D(); seat.roundRect(x - w / 2 - 10, base - 210, w + 20, 120, 18);
+  paint(c, seat, { fill: goldGrad(c, x - w / 2, x + w / 2, 0), dots: PAT.dark, dx: x + w * .18, da: .7, stroke: '#140d06', lw: 4 });
+  c.strokeStyle = 'rgba(30,18,6,.55)'; c.lineWidth = 3; c.beginPath(); c.moveTo(x, base - 205); c.lineTo(x, base - 95); c.stroke();
+  for (const sd of [-1, 1]) {
+    const a = new Path2D(); a.roundRect(x + sd * (w / 2 + 10) - 55, base - 330, 110, 250, [50, 50, 12, 12]);
+    paint(c, a, { fill: goldGrad(c, x + sd * w / 2 - 55, x + sd * w / 2 + 55, sd < 0 ? 0 : 1), dots: PAT.dark, dx: x + sd * w / 2, da: .7, stroke: '#140d06', lw: 4 });
+  }
+  const base2 = new Path2D(); base2.rect(x - w / 2 - 60, base - 95, w + 120, 40); paint(c, base2, { fill: goldGrad(c, x - w / 2, x + w / 2, 2), stroke: '#140d06', lw: 3 });
+  for (const sd of [-1, 1]) { c.fillStyle = '#2a1c0c'; c.fillRect(x + sd * (w / 2 + 30) - 12, base - 35, 24, 35); }
+}
+function tvLight(c, T, a = 1) {
+  const f = .75 + .25 * Math.sin(T * 23) * Math.sin(T * 7.3) + .12 * Math.sin(T * 51);
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+  const g = c.createRadialGradient(540, 2100, 100, 540, 1500, 1500);
+  g.addColorStop(0, `rgba(235,225,200,${.32 * a * f})`); g.addColorStop(1, 'rgba(235,225,200,0)');
+  c.globalCompositeOperation = 'screen'; c.fillStyle = g; c.fillRect(0, 0, W, H); c.restore();
+}
+function drawTV(c, x, y, w, h, T, inner) {
+  for (const sd of [-1, 1]) { c.strokeStyle = '#8a6638'; c.lineWidth = 6; c.beginPath(); c.moveTo(x + sd * 30, y - h / 2 - 20); c.lineTo(x + sd * 150, y - h / 2 - 190); c.stroke(); c.fillStyle = '#d6aa66'; c.beginPath(); c.arc(x + sd * 150, y - h / 2 - 190, 10, 0, TAU); c.fill(); }
+  const box = new Path2D(); box.roundRect(x - w / 2, y - h / 2, w, h, 40);
+  paint(c, box, { fill: goldGrad(c, x - w / 2, x + w / 2, 1), dots: PAT.dark, dx: x + w * .2, da: .7, stroke: '#140d06', lw: 5 });
+  const sw = w * .74, sh = h * .78, sx = x - w / 2 + w * .06, sy = y - sh / 2;
+  const scr = new Path2D(); scr.roundRect(sx, sy, sw, sh, 50);
+  c.save(); c.clip(scr);
+  const g = c.createRadialGradient(sx + sw / 2, sy + sh / 2, 10, sx + sw / 2, sy + sh / 2, sw * .75);
+  g.addColorStop(0, '#d9cfb6'); g.addColorStop(.7, '#8d8571'); g.addColorStop(1, '#3a352b');
+  c.fillStyle = g; c.fillRect(sx, sy, sw, sh);
+  inner && inner(c, sx, sy, sw, sh);
+  c.fillStyle = 'rgba(0,0,0,0.12)'; for (let yy = sy + ((T * 60) % 6); yy < sy + sh; yy += 6) c.fillRect(sx, yy, sw, 2);
+  const roll = sy + ((T * 120) % (sh + 200)) - 100; c.fillStyle = 'rgba(255,255,255,0.08)'; c.fillRect(sx, roll, sw, 60);
+  c.restore();
+  c.lineWidth = 8; c.strokeStyle = '#140d06'; c.stroke(scr);
+  for (let k = 0; k < 2; k++) { const kn = new Path2D(); kn.arc(x + w * .39, y - h * .2 + k * 110, 26, 0, TAU); paint(c, kn, { fill: '#d6aa66', stroke: '#140d06', lw: 3 }); }
+  c.fillStyle = '#140d06'; for (let k = 0; k < 5; k++) c.fillRect(x + w * .33, y + h * .2 + k * 16, 70, 6);
+}
+function chainLinks(c, x0, y0, x1, y1, n, tight) {
+  const ang = Math.atan2(y1 - y0, x1 - x0);
+  for (let k = 0; k < n; k++) {
+    const u = (k + .5) / n, x = lerp(x0, x1, u), y = lerp(y0, y1, u) + Math.sin(u * PI) * 18 * (1 - tight);
+    c.save(); c.translate(x, y); c.rotate(ang + (k % 2 ? PI / 2 * .0 : 0));
+    const l = new Path2D(); l.roundRect(-26, k % 2 ? -9 : -14, 52, k % 2 ? 18 : 28, 14);
+    c.lineWidth = 9; c.strokeStyle = '#140d06'; c.stroke(l); c.lineWidth = 5; c.strokeStyle = k % 2 ? '#b08a52' : '#e4c389'; c.stroke(l);
+    c.restore();
+  }
+}
+function drawChainHeart(c, cx, cy, s, T, tight) {
+  const beat = 1 - .07 * beatPulse(T) - .06 * tight;
+  c.save(); c.translate(cx, cy); c.scale(beat, beat);
+  const gold = c.createLinearGradient(0, -s, 0, s); gold.addColorStop(0, '#f0cf91'); gold.addColorStop(.5, '#c89859'); gold.addColorStop(1, '#8f6634');
+  const p = heartPath(s);
+  c.save(); c.shadowColor = 'rgba(255,200,120,.5)'; c.shadowBlur = 60; c.fillStyle = gold; c.fill(p); c.restore();
+  paint(c, p, { fill: gold, dots: PAT.dark, dx: s * .18, da: .65, stroke: '#2a1a08', lw: 7 });
+  c.strokeStyle = 'rgba(255,245,215,.6)'; c.lineWidth = 12; c.lineCap = 'round'; c.beginPath(); c.arc(-.5 * s, -.32 * s, .3 * s, PI * 1.1, PI * 1.55); c.stroke();
+  c.restore();
+  const r = s * 1.25 * (1 - .08 * tight);
+  chainLinks(c, cx - r, cy - r * .75, cx + r, cy + r * .75, 11, tight);
+  chainLinks(c, cx + r, cy - r * .75, cx - r, cy + r * .75, 11, tight);
+  const lk = new Path2D(); lk.roundRect(cx - 40, cy - 20, 80, 70, 12);
+  c.strokeStyle = '#140d06'; c.lineWidth = 12; c.beginPath(); c.arc(cx, cy - 20, 26, PI, 0); c.stroke();
+  c.strokeStyle = '#d6aa66'; c.lineWidth = 7; c.stroke();
+  paint(c, lk, { fill: goldGrad(c, cx - 40, cx + 40, 0), stroke: '#140d06', lw: 4 });
+  c.fillStyle = '#140d06'; c.beginPath(); c.arc(cx, cy + 8, 9, 0, TAU); c.fill(); c.fillRect(cx - 4, cy + 10, 8, 22);
+}
+function drawBreakHeart(c, cx, cy, s, k, T) {
+  const gold = c.createLinearGradient(0, -s, 0, s); gold.addColorStop(0, '#f0cf91'); gold.addColorStop(.5, '#c89859'); gold.addColorStop(1, '#8f6634');
+  const crack = [[0, -.46], [-.1, -.2], [.08, .02], [-.06, .3], [.04, .55], [0, .95]];
+  const half = sd => { const p = new Path2D(); p.moveTo(crack[0][0] * s, crack[0][1] * s); for (const [a, b] of crack) p.lineTo(a * s, b * s); p.lineTo(sd * 1.4 * s, 1.2 * s); p.lineTo(sd * 1.4 * s, -1.3 * s); p.closePath(); return p; };
+  const e = easeOut(k);
+  for (const sd of [-1, 1]) {
+    c.save(); c.translate(cx + sd * e * s * .35, cy + e * s * .12); c.rotate(sd * e * .28);
+    c.save(); c.clip(half(sd));
+    const p = heartPath(s);
+    c.save(); c.shadowColor = `rgba(255,200,120,${.5 * (1 - e * .6)})`; c.shadowBlur = 60; c.fillStyle = gold; c.fill(p); c.restore();
+    paint(c, p, { fill: gold, dots: PAT.dark, dx: s * .18, da: .65, stroke: '#2a1a08', lw: 7 });
+    c.restore();
+    c.strokeStyle = '#2a1a08'; c.lineWidth = 6; c.beginPath(); crack.forEach(([a, b], i) => i ? c.lineTo(a * s, b * s) : c.moveTo(a * s, b * s)); c.stroke();
+    c.restore();
+  }
+  if (k > 0 && k < 1) for (let i = 0; i < 14; i++) {
+    const a = hash(i * 3.3) * TAU, d = e * (60 + hash(i) * 180);
+    c.fillStyle = `rgba(230,190,120,${1 - e})`; c.beginPath(); c.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d + e * e * 120, 4 + hash(i * 7) * 5, 0, TAU); c.fill();
+  }
+}
+function drawMiniHeart(c, x, y, s, a) {
+  c.save(); c.globalAlpha *= a; c.translate(x, y);
+  const p = heartPath(s); paint(c, p, { fill: '#dcb172', stroke: '#2a1a08', lw: Math.max(2, s * .12) }); c.restore();
+}
+function drawGlowHeart(c, x, y, s, T, a = 1) {
+  c.save(); c.globalAlpha *= a;
+  const g = c.createRadialGradient(x, y, 5, x, y, s * 4); g.addColorStop(0, `rgba(255,215,140,${.6})`); g.addColorStop(1, 'rgba(255,215,140,0)');
+  c.fillStyle = g; c.fillRect(x - s * 4, y - s * 4, s * 8, s * 8);
+  c.translate(x, y); const b = 1 + .1 * beatPulse(T); c.scale(b, b);
+  const gold = c.createLinearGradient(0, -s, 0, s); gold.addColorStop(0, '#fff0c8'); gold.addColorStop(1, '#d39b52');
+  const p = heartPath(s); paint(c, p, { fill: gold, stroke: '#2a1a08', lw: 4 }); c.restore();
+}
+function drawBed(c, x, base, w) {
+  const hb = new Path2D(); hb.roundRect(x + w / 2 - 40, base - 330, 70, 330, [30, 30, 6, 6]);
+  paint(c, hb, { fill: goldGrad(c, x + w / 2 - 40, x + w / 2 + 30, 0), dots: PAT.dark, dx: x + w / 2, da: .7, stroke: '#140d06', lw: 4 });
+  const fb = new Path2D(); fb.roundRect(x - w / 2 - 20, base - 200, 60, 200, [24, 24, 6, 6]);
+  paint(c, fb, { fill: goldGrad(c, x - w / 2 - 20, x - w / 2 + 40, 1), dots: PAT.dark, dx: x - w / 2 + 10, da: .7, stroke: '#140d06', lw: 4 });
+  const m = new Path2D(); m.roundRect(x - w / 2 + 20, base - 150, w - 40, 70, 20);
+  paint(c, m, { fill: '#cfc8b8', dots: PAT.coat, dx: x + w * .2, da: .5, stroke: '#140d06', lw: 3 });
+  const fr = new Path2D(); fr.rect(x - w / 2, base - 90, w, 60); paint(c, fr, { fill: goldGrad(c, x - w / 2, x + w / 2, 1), dots: PAT.dark, dx: x + w * .2, da: .6, stroke: '#140d06', lw: 3 });
+  for (const sd of [-1, 1]) { c.fillStyle = '#2a1c0c'; c.fillRect(x + sd * (w / 2 - 30) - 12, base - 30, 24, 30); }
+}
+function drawSleepingGirl(c, x, y, s, T, smile = 1) {
+  // la fille allongée sur le dos (vue de profil « cartoon »), tête à droite
+  c.save(); c.translate(x, y); c.rotate(PI / 2);
+  const br = 1 + .012 * Math.sin(T * 2.2);
+  c.scale(s, s * br);
+  drawGirl(c, { x: 0, y: 0, s: 1, T, expr: smile > .5 ? 'sleep' : 'sleepN', bob: 0, noShadow: true });
+  c.restore();
+  c.save(); c.translate(x, y);
+  const bl = new Path2D(); bl.moveTo(-40 * s, -118 * s); bl.quadraticCurveTo(200 * s, -150 * s, 470 * s, -128 * s); bl.quadraticCurveTo(500 * s, 0, 470 * s, 118 * s); bl.lineTo(-40 * s, 118 * s); bl.closePath();
+  paint(c, bl, { fill: goldGrad(c, -40 * s, 480 * s, 1), dots: PAT.dark, dx: 250 * s, da: .55, stroke: '#140d06', lw: 4 });
+  c.strokeStyle = 'rgba(30,18,6,.5)'; c.lineWidth = 3; for (let k = 1; k < 4; k++) { c.beginPath(); c.moveTo(k * 110 * s, -125 * s); c.lineTo(k * 110 * s + 14, 115 * s); c.stroke(); }
+  c.restore();
+}
+function drawZzz(c, x, y, T, a = 1) {
+  c.save(); c.font = '700 44px Oswald'; c.textAlign = 'center';
+  for (let k = 0; k < 3; k++) { const ph = (T * .45 + k / 3) % 1; c.fillStyle = `rgba(240,210,150,${a * Math.sin(PI * ph)})`; c.font = `700 ${30 + ph * 30}px Oswald`; c.fillText('z', x + ph * 70 + Math.sin(ph * 6) * 10, y - ph * 160); }
+  c.restore();
+}
+function sunsetSky(c, hy, T, k, o = {}) {
+  drawSky(c, { hy, night: lerp(o.n0 ?? .05, o.n1 ?? .1, k), sun: o.noSun ? null : { x: o.sx ?? 650, y: lerp(o.sy0 ?? 1030, o.sy1 ?? 1030, k), r: o.r ?? 260, a: 1 - (o.fade ?? 0) * k }, stars: o.stars ? k * o.stars : 0, moon: o.moon, clouds: o.clouds ?? .75, T });
+}
+
+// ---------- gabarits de plans ----------
+// chaque gabarit : (opt, d) => scène {cam, heat, bg, fg}, lt = temps local, d = durée du plan
+const TPL = {
+  // ouverture instrumentale : le palais au lever du soleil, caméra qui descend
+  intro: (o) => ({
+    cam: (lt, d) => ({ z: 1.12 - .1 * ease(lt / d), x: 545, y: lerp(820, 1150, ease(lt / d)) }),
+    heat: () => ({ amp: 5, y0: 650, y1: 1330, peak: 1080, spread: 260 }),
+    bg(c, lt, d, T) { const hy = 1300; drawSky(c, { hy, night: .1, sun: { x: 545, y: lerp(1150, 1000, ease(lt / d)), r: 205 }, clouds: .95, T }); drawRuinsBand(c, hy); drawFloor(c, hy, { sunX: 545 }); drawPillar(c, 235, hy + 25, 70, 560, { seed: 2 }); drawPillar(c, 860, hy + 25, 70, 470, { broken: true, seed: 3 }); drawDais(c, 545, hy + 80); drawThrone(c, 545, hy + 6, 1); },
+    fg(c, lt, d, T) { drawPillar(c, 30, 1560, 135, 1350, { seed: 1 }); drawPillar(c, 1065, 1540, 135, 950, { broken: true, seed: 7 }); const w = smooth(.3, d, lt); drawHood(c, { x: lerp(-150, 330, w), y: 1660, s: .95, T, walk: w < 1 ? T * 6 : null }); drawDust(c, T, 45, 1); },
+  }),
+  // il pense à elle : bulle de pensée avec son visage
+  think: (o) => ({
+    cam: (lt, d) => ({ z: 1.0 + .08 * ease(lt / d), x: 540, y: 1100 }),
+    heat: () => ({ amp: 2.5, y0: 600, y1: 1400, peak: 1100, spread: 320 }),
+    bg(c, lt, d, T) { const hy = 1330; drawSky(c, { hy, night: o.night ?? 1, moon: (o.night ?? 1) > .5 ? { x: 860, y: 360, r: 60 } : null, sun: (o.night ?? 1) > .5 ? null : { x: 545, y: 1040, r: 220 }, stars: o.night ?? 1, clouds: .5, T }); drawBalustrade(c, hy); drawFloor(c, hy, { night: o.night ?? 1 }); drawPillar(c, 95, hy + 40, 85, 760, { broken: true, seed: 11 }); drawPillar(c, 985, hy + 40, 85, 820, { seed: 12 }); },
+    fg(c, lt, d, T) {
+      const h = drawHood(c, { x: 400, y: 1760, s: 1.0, T, armR: { tx: 70, ty: -470, b: -1 } });
+      const k = smooth(.15, 1.1, lt);
+      drawThought(c, 470, 1140, 700, 720, 520, 420, k, T, x => { drawGirl(x, { x: 700, y: 1240, s: .7, T, expr: 'smile', turn: -.2, bob: 0 }); drawMiniHeart(x, 880, 610, 26, .8); });
+      drawDust(c, T, 22, 3);
+    },
+  }),
+  // les nuits de juin (calendrier + téléphone)
+  june: (o) => ({
+    cam: (lt, d) => ({ z: 1 + .07 * ease(lt / d), x: 560, y: 1150 }),
+    heat: () => ({ amp: 2.5, y0: 600, y1: 1400, peak: 1100, spread: 320 }),
+    bg(c, lt, d, T) { const hy = 1330; drawSky(c, { hy, night: 1, moon: { x: 805, y: 420, r: 74 }, stars: 1, clouds: .5, T }); drawBalustrade(c, hy); drawFloor(c, hy, { night: 1 }); drawPillar(c, 95, hy + 40, 85, 760, { broken: true, seed: 11 }); },
+    fg(c, lt, d, T) { drawCalendar(c, 575, 650, 430, 830, (o.from ?? 9) + lt / BEAT() * 1.5); const h = drawHood(c, { x: 300, y: 1730, s: 1.0, T, armR: { tx: 34, ty: -318, b: -1 }, glow: 1.25 }); drawPhone(c, h.rh.x, h.rh.y, T); drawDust(c, T, 22, 3); },
+  }),
+  // la route : mirage (elle apparaît puis disparaît), eau qui n'existe pas, coucher de soleil → nuit
+  road: (o) => ({
+    cam: (lt, d) => ({ z: (o.z0 ?? 1.1) + ((o.z1 ?? 1.02) - (o.z0 ?? 1.1)) * ease(lt / d), x: 600, y: 1160 }),
+    heat: (lt, d) => ({ amp: (o.amp ?? 9) + (o.ampUp ?? 7) * ease(lt / d), y0: 820, y1: 1330, peak: 1055, spread: 170 }),
+    bg(c, lt, d, T) {
+      const hy = 1050, k = ease(lt / d);
+      sunsetSky(c, hy, T, o.sunset ? k : 0, { sy0: 1035, sy1: 1200, n1: .9, stars: 1, fade: o.sunset ? .6 : 0, moon: o.sunset ? { x: 820, y: 420, r: 60 } : null });
+      drawDesert(c, hy); drawRoad(c, hy, 650); drawPosts(c, hy, 650);
+      if (o.water) { c.save(); const wa = smooth(0, .8, lt) * (o.sunset ? 1 - k : 1); const m = c.createRadialGradient(650, hy + 30, 5, 650, hy + 30, 420); m.addColorStop(0, `rgba(255,232,180,${.8 * wa})`); m.addColorStop(1, 'rgba(255,232,180,0)'); c.translate(650, hy); c.scale(1, .3); c.translate(-650, -hy); c.fillStyle = m; c.fillRect(200, hy - 400, 900, 900); c.restore(); }
+      if (o.girl) {
+        const a = smooth(o.gIn ?? .3, (o.gIn ?? .3) + .7, lt) * (1 - smooth(o.gOut ?? d - 1, (o.gOut ?? d - 1) + .8, lt));
+        if (a > 0) { drawGirl(c, { x: 712, y: hy + 10, s: .2, T, alpha: a * .9 }); c.save(); c.translate(0, 2 * (hy + 10)); c.scale(1, -1); drawGirl(c, { x: 712, y: hy + 10, s: .2, T, alpha: a * .28 }); c.restore(); }
+      }
+    },
+    fg(c, lt, d, T) { drawHeatLines(c, T, 80, 1000, 1500, 9, .28); if (!o.noHood) drawHood(c, { x: o.walk ? lerp(170, 360, lt / d) : (o.hx ?? 300), y: 1770, s: 1.02, T, walk: o.walk ? T * 6.5 : null }); if (o.sunset) { const k = ease(lt / d); c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = `rgba(0,0,10,${.35 * k})`; c.fillRect(0, 0, W, H); c.restore(); } drawDust(c, T, 28, 2); },
+  }),
+  // le miroir : il la voit dans le reflet, puis le reflet ondule
+  mirror: (o) => ({
+    cam: (lt, d) => ({ z: 1 + .12 * ease(lt / d), x: lerp(540, 600, ease(lt / d)), y: 1140 }),
+    heat: () => ({ amp: 2, y0: 500, y1: 1500, peak: 1000, spread: 400 }),
+    bg(c, lt, d, T) { const hy = 1430; drawWall(c, hy); drawPillar(c, 70, hy + 25, 110, 1350, { seed: 5 }); drawPillar(c, 1010, hy + 25, 110, 1350, { seed: 6 }); drawFloor(c, hy); drawMirror(c, 650, 1000, lt * (o.speed ?? 1) + (o.off ?? 0), T); },
+    fg(c, lt, d, T) { const r = smooth(.8, 2.0, lt) * (1 - smooth(d - .8, d, lt)); drawHood(c, { x: 250, y: 1800, s: 1.05, T, armR: { wx: lerp(410, 455, r), wy: lerp(1560, 1190, r) } }); drawDust(c, T, 26, 4); },
+  }),
+  // elle est triste, il tend une rose d'or qui fane ; tears = instant (local) où les larmes coulent
+  sad: (o) => ({
+    cam: (lt, d) => ({ z: (o.close ? 1.25 : 1.06) - .06 * ease(lt / d), x: o.close ? 430 : 560, y: o.close ? 1080 : 1200 }),
+    heat: () => ({ amp: 3, y0: 650, y1: 1450, peak: 1100, spread: 330 }),
+    bg(c, lt, d, T) { const hy = 1420; drawWall(c, hy); drawArch(c, 770, 690, 300, 730); drawPillar(c, 1050, hy + 25, 100, 1300, { seed: 9 }); drawFloor(c, hy, { vx: 770 }); lightSpill(c, 770, hy, 300); },
+    fg(c, lt, d, T) {
+      const tAt = o.turnAt ?? 1.4, turn = o.noTurn ? .3 : lerp(.35, -.6, smooth(tAt, tAt + .7, lt));
+      const tears = o.tearsAt != null ? smooth(o.tearsAt - .15, o.tearsAt + .35, lt) : (o.tears ?? 0);
+      drawGirl(c, { x: 350, y: 1840, s: 1.24, T, expr: 'sad', tears, turn, look: turn < 0 ? -1 : .6 });
+      if (o.rose !== false) { const h = drawHood(c, { x: 860, y: 1800, s: 1.0, T, armL: { wx: 650, wy: 1420 + Math.sin(T * 3) * 4 } }); drawRose(c, h.lh.x, h.lh.y, -.35, smooth(o.wilt0 ?? .4, o.wilt1 ?? d - .2, lt), T); }
+      else drawHood(c, { x: 860, y: 1800, s: 1.0, T });
+    },
+  }),
+  // gros plan des larmes (« quand tu pleures »)
+  cry: (o) => ({
+    cam: (lt, d) => ({ z: lerp(1.9, 2.15, ease(lt / d)), x: 540, y: 1060 }),
+    heat: () => ({ amp: 2, y0: 500, y1: 1500, peak: 1000, spread: 400 }),
+    bg(c, lt, d, T) { const hy = 1420; drawWall(c, hy); drawArch(c, 770, 690, 300, 730); drawFloor(c, hy, { vx: 770 }); },
+    fg(c, lt, d, T) { const tears = smooth((o.tearsAt ?? .4) - .15, (o.tearsAt ?? .4) + .35, lt); drawGirl(c, { x: 540, y: 1840, s: 1.3, T, expr: 'sad', tears, turn: 0, look: 0 }); },
+  }),
+  // le cœur : 'melt' (fond), 'chain' (enchaîné, il étouffe), 'break' (se brise à breakAt)
+  heart: (o) => ({
+    cam: (lt, d) => { const k = ease(lt / (d * .85)); return { z: 1.2 - .2 * k, x: 540, y: lerp(880, 1090, k) }; },
+    heat: (lt, d) => ({ amp: o.mode === 'melt' ? 4 + 8 * smooth(0, d, lt) : 3, y0: 420, y1: 1250, peak: 820, spread: 320 }),
+    bg(c, lt, d, T) {
+      const hy = 1520; c.fillStyle = '#0d0a07'; c.fillRect(-600, -600, W + 1200, H + 1200);
+      drawRays(c, 540, 800, T, o.mode === 'break' ? 1 - .7 * smooth(o.breakAt ?? 1, (o.breakAt ?? 1) + .6, lt) : 1);
+      drawPillar(c, 130, hy + 20, 90, 640, { broken: true, seed: 21 }); drawPillar(c, 950, hy + 20, 90, 720, { broken: true, seed: 22 }); drawFloor(c, hy);
+      if (o.mode === 'melt') drawMeltHeart(c, 540, 790, 190, smooth(.2, d - .2, lt) * (o.melt ?? 1), T, lt);
+      else if (o.mode === 'chain') drawChainHeart(c, 540, 790, 175, T, smooth(.3, d, lt));
+      else drawBreakHeart(c, 540, 790, 185, clamp((lt - (o.breakAt ?? 1)) / .7), T);
+    },
+    fg(c, lt, d, T) { drawHood(c, { x: 540, y: 1910, s: 1.12, T, armL: { tx: 46, ty: -300, b: 1 }, armR: { tx: -46, ty: -280, b: -1 }, glow: 1 + .6 * beatPulse(T) }); drawDust(c, T, 32, 6); },
+  }),
+  // main dans la main au palais ; release = instant local où les mains se lâchent
+  palace: (o) => ({
+    cam: (lt, d) => ({ z: 1 + .06 * ease(lt / d), x: 545, y: 1150 }),
+    heat: () => ({ amp: 5, y0: 650, y1: 1330, peak: 1080, spread: 260 }),
+    bg(c, lt, d, T) { const hy = 1300; drawSky(c, { hy, night: o.night ?? .1, sun: { x: 545, y: 1000, r: 205 }, clouds: .95, T }); drawRuinsBand(c, hy); drawFloor(c, hy, { sunX: 545 }); drawPillar(c, 235, hy + 25, 70, 560, { seed: 2 }); drawPillar(c, 860, hy + 25, 70, 470, { broken: true, seed: 3 }); drawDais(c, 545, hy + 80); drawThrone(c, 545, hy + 6, 1.0); },
+    fg(c, lt, d, T) {
+      drawPillar(c, 30, 1560, 135, 1350, { seed: 1 }); drawPillar(c, 1065, 1540, 135, 950, { broken: true, seed: 7 });
+      const sw = Math.sin(T * PI * CFG.bpm / 60 / 2) * 8;
+      const r = o.release != null ? smooth(o.release, o.release + .6, lt) : 0;
+      const step = o.release != null ? smooth(o.release + .3, o.release + 1.3, lt) : 0;
+      const hand = { x: 548, y: 1380 + sw };
+      const gx = 770 + step * 90;
+      drawHood(c, { x: 330, y: 1660, s: .95, T, armR: { wx: lerp(hand.x - 6, 490, r), wy: lerp(hand.y + 8, 1520, r) } });
+      drawGirl(c, { x: gx, y: 1650, s: .95, T, armL: { wx: lerp(hand.x + 6, gx - 120, r), wy: lerp(hand.y, 1500, r) }, expr: r > .3 ? 'sad' : 'smile', turn: lerp(-.3, .5, step), look: r > .3 ? 1 : -1 });
+      drawDust(c, T, 45, 1);
+    },
+  }),
+  // devant la télé : côte à côte, la lumière de l'écran clignote, ils ne se regardent pas
+  tv: (o) => ({
+    cam: (lt, d) => o.close ? ({ z: 1.32 + .08 * ease(lt / d), x: 545, y: 1330 }) : ({ z: 1.05 + .05 * ease(lt / d), x: 540, y: 1250 }),
+    heat: () => null,
+    bg(c, lt, d, T) { const hy = 1400; drawWall(c, hy); drawPillar(c, 60, hy + 25, 100, 1300, { seed: 41 }); drawPillar(c, 1020, hy + 25, 100, 1300, { seed: 42 }); drawFloor(c, hy, { night: .6 }); },
+    fg(c, lt, d, T) {
+      const B = 1780;
+      drawCouch(c, 540, B, 720, 'back');
+      drawHood(c, { x: 380, y: B - 60, s: .95, T, armR: { tx: 70, ty: -240, b: -1 } });
+      drawGirl(c, { x: 710, y: B - 30, s: .95, T, expr: 'neutral', turn: .45, look: 1, armL: { tx: -60, ty: -300, b: 1 } });
+      drawCouch(c, 540, B, 720, 'front');
+      seatedLegs(c, 380, B + 40, .95); seatedLegs(c, 710, B + 40, .7);
+      tvLight(c, T, 1);
+    },
+  }),
+  // l'écran de télé où l'on voit leur reflet
+  screen: (o) => ({
+    cam: (lt, d) => ({ z: 1 + .1 * ease(lt / d), x: 540, y: 1060 }),
+    heat: () => null,
+    bg(c, lt, d, T) { const hy = 1500; drawWall(c, hy); drawFloor(c, hy, { night: .6 }); const st = new Path2D(); st.rect(220, 1440, 640, 70); paint(c, st, { fill: goldGrad(c, 220, 860, 2), stroke: '#140d06', lw: 3 }); },
+    fg(c, lt, d, T) {
+      const k = smooth(.2, 1.2, lt);
+      drawTV(c, 540, 1060, 760, 640, T, (x, sx, sy, sw, sh) => {
+        x.save(); x.globalAlpha = .35 + .45 * k;
+        drawHood(x, { x: sx + sw * .34, y: sy + sh + 140, s: .55, T, bob: 0 });
+        drawGirl(x, { x: sx + sw * .68, y: sy + sh + 150, s: .55, T, expr: o.sadFace ? 'sad' : 'smile', turn: -.3, bob: 0 });
+        x.restore();
+        if (o.label) { x.save(); x.textAlign = 'center'; x.font = '700 58px Oswald'; x.fillStyle = `rgba(40,30,15,${.6 * k})`; x.fillText(o.label, sx + sw / 2, sy + 90); x.restore(); }
+      });
+      tvLight(c, T, .6);
+    },
+  }),
+  // elle regarde vers la lumière (une vie meilleure) ; walk = elle y entre ; ghost = silhouette qui l'attend
+  arch: (o) => ({
+    cam: (lt, d) => ({ z: 1.02 + .06 * ease(lt / d), x: 600, y: 1150 }),
+    heat: () => ({ amp: 3, y0: 650, y1: 1450, peak: 1050, spread: 330 }),
+    bg(c, lt, d, T) {
+      const hy = 1420; drawWall(c, hy); drawArch(c, 640, 640, 340, 780, 1); drawFloor(c, hy, { vx: 640 }); lightSpill(c, 640, hy, 340, 1.2);
+      if (o.ghost) drawSilhouette(c, 660, 1405, .55, smooth(.4, 1.4, lt));
+      if (o.walk) { const w = ease(clamp(lt / (d * .95))); drawGirl(c, { x: lerp(470, 630, w), y: lerp(1790, 1420, w), s: lerp(1.0, .5, w), back: true, walk: T * 6.3, T, alpha: 1 - smooth(.75, 1, w) }); }
+    },
+    fg(c, lt, d, T) {
+      if (!o.walk) drawGirl(c, { x: 470, y: 1800, s: 1.05, T, expr: 'neutral', turn: .7, look: 1 });
+      drawHood(c, { x: 900, y: 1830, s: 1.0, T, glow: .8 });
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0); const g = c.createLinearGradient(700, 0, 1080, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.45)'); c.fillStyle = g; c.fillRect(0, 0, W, H); c.restore();
+    },
+  }),
+  // il tend ses mains vides (ce qu'il ne pourra jamais lui donner)
+  empty: (o) => ({
+    cam: (lt, d) => ({ z: 1.15 + .1 * ease(lt / d), x: 540, y: 1250 }),
+    heat: () => ({ amp: 2, y0: 600, y1: 1400, peak: 1000, spread: 300 }),
+    bg(c, lt, d, T) { const hy = 1400; c.fillStyle = '#0d0a07'; c.fillRect(-600, -600, W + 1200, H + 1200); drawRays(c, 540, 900, T, .45); drawFloor(c, hy); },
+    fg(c, lt, d, T) {
+      const k = smooth(.2, 1.0, lt);
+      const h = drawHood(c, { x: 540, y: 1800, s: 1.05, T, armL: { tx: lerp(-160, -300, k), ty: lerp(-150, -250, k) }, armR: { tx: lerp(160, 300, k), ty: lerp(-150, -250, k) } });
+      for (let i = 0; i < 26; i++) { const ph = (lt * .6 + hash(i * 2.7)) % 1; const x = lerp(h.lh.x, h.rh.x, hash(i * 5.1)), y = Math.min(h.lh.y, h.rh.y) + ph * 380; c.fillStyle = `rgba(240,200,130,${(1 - ph) * .8 * k})`; c.beginPath(); c.arc(x + Math.sin(ph * 8 + i) * 12, y, 2 + hash(i) * 3, 0, TAU); c.fill(); }
+    },
+  }),
+  // elle lui dit quelque chose de tendre : petits cœurs qui montent
+  loving: (o) => ({
+    cam: (lt, d) => ({ z: 1.12 - .06 * ease(lt / d), x: 540, y: 1180 }),
+    heat: () => ({ amp: 3, y0: 650, y1: 1330, peak: 1080, spread: 260 }),
+    bg(c, lt, d, T) { const hy = 1300; drawSky(c, { hy, night: .1, sun: { x: 545, y: 1000, r: 205 }, clouds: .9, T }); drawRuinsBand(c, hy); drawFloor(c, hy, { sunX: 545 }); drawDais(c, 545, hy + 80); drawThrone(c, 545, hy + 6, 1); },
+    fg(c, lt, d, T) {
+      drawGirl(c, { x: 680, y: 1700, s: 1.05, T, expr: 'smile', turn: -.4, look: -1, armL: { wx: 560, wy: 1330 } });
+      drawHood(c, { x: 340, y: 1720, s: 1.0, T });
+      for (let i = 0; i < 9; i++) { const ph = (lt * .45 + i / 9) % 1; const a = Math.sin(PI * ph) * smooth(.1, .6, lt); drawMiniHeart(c, 560 + Math.sin(ph * 5 + i) * 60 + (i % 3 - 1) * 70, 1320 - ph * 700, 18 + hash(i) * 16, a); }
+    },
+  }),
+  // seul dans le grand palais (plan large)
+  alone: (o) => ({
+    cam: (lt, d) => ({ z: lerp(1.0, 1.12, ease(lt / d)), x: 540, y: 1150 }),
+    heat: () => ({ amp: 2, y0: 700, y1: 1400, peak: 1100, spread: 300 }),
+    bg(c, lt, d, T) {
+      const hy = 1300; drawSky(c, { hy, night: o.night ?? .85, stars: o.night ?? .85, moon: { x: 540, y: 520, r: 90 }, clouds: .5, T }); drawRuinsBand(c, hy);
+      for (const [x, h, b] of [[90, 900, 0], [300, 640, 1], [780, 700, 0], [990, 860, 1]]) drawPillar(c, x, hy + 30, 80, h, { broken: !!b, seed: x });
+      drawFloor(c, hy, { night: .8 });
+    },
+    fg(c, lt, d, T) { drawHood(c, { x: 540, y: 1520, s: .55, T }); drawDust(c, T, 26, 8); if (o.fadeOut) { const k = smooth(d * .35, d - .2, lt); c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = `rgba(0,0,0,${k})`; c.fillRect(0, 0, W, H); c.restore(); } },
+  }),
+  // au revoir sur la route (elle s'éloigne vers le soleil)
+  goodbye: (o) => ({
+    cam: (lt, d) => ({ z: 1 + .08 * ease(lt / d), x: 630, y: 1150 }),
+    heat: (lt, d) => ({ amp: 7 + 6 * ease(lt / d), y0: 860, y1: 1300, peak: 1058, spread: 160 }),
+    bg(c, lt, d, T) {
+      const hy = 1050, k = ease(lt / d);
+      drawSky(c, { hy, night: .2 + .35 * k, sun: { x: 650, y: lerp(1020, 1150, k), r: 255 }, clouds: .75, T });
+      drawDesert(c, hy); drawRoad(c, hy, 650); drawPosts(c, hy, 650);
+      const w = ease(clamp(lt / (d * .95))), q = Math.pow(w, .65);
+      drawGirl(c, { x: lerp(500, 650, Math.pow(w, .5)), y: lerp(1580, hy + 14, q), s: lerp(.62, .07, q), back: true, walk: T * 6.3, T, alpha: 1 - smooth(.62, .98, w) });
+    },
+    fg(c, lt, d, T) { const wa = o.waveAt ?? .4, wv = smooth(wa - .3, wa + .25, lt) * (1 - smooth(Math.max(wa + 1.2, d - .9), Math.max(wa + 1.6, d - .2), lt)); drawHood(c, { x: 880, y: 1830, s: 1.08, T, armR: { wx: lerp(1040, 1075, wv) + Math.sin(T * 7) * 22 * wv, wy: lerp(1640, 1150, wv) } }); drawHeatLines(c, T, 100, 1000, 1480, 10, .3); drawDust(c, T, 30, 7); },
+  }),
+  // elle dort et sourit, il la regarde ; give = il tient un cœur lumineux
+  sleep: (o) => ({
+    cam: (lt, d) => o.close ? ({ z: 2.5 + .25 * ease(lt / d), x: o.give ? 735 : 690, y: 1420 }) : ({ z: 1.04 + .07 * ease(lt / d), x: 560, y: 1200 }),
+    heat: () => ({ amp: 2, y0: 500, y1: 1300, peak: 900, spread: 300 }),
+    bg(c, lt, d, T) { const hy = 1330; drawSky(c, { hy, night: 1, moon: { x: 300, y: 420, r: 70 }, stars: 1, clouds: .45, T }); drawBalustrade(c, hy); drawFloor(c, hy, { night: 1 }); },
+    fg(c, lt, d, T) {
+      drawBed(c, 470, 1660, 640);
+      const pil = new Path2D(); pil.roundRect(640, 1415, 130, 70, 30); paint(c, pil, { fill: '#ddd6c6', stroke: '#140d06', lw: 3 });
+      drawSleepingGirl(c, 215, 1452, .76, T, 1);
+      drawZzz(c, 700, 1330, T, .9);
+      if (o.dream !== false) drawThought(c, 690, 1300, 560, 800, 480, 380, smooth(.1, 1.0, lt), T, x => { drawSky(x, { hy: 900, night: 0, sun: { x: 560, y: 900, r: 120 }, clouds: 0, T }); x.fillStyle = '#4a3620'; x.fillRect(250, 900, 700, 200); for (let i = 0; i < 4; i++) drawMiniHeart(x, 440 + i * 80, 740 + Math.sin(T * 2 + i) * 14, 16, .9); });
+      if (o.give) { const k = smooth(.3, 1.2, lt); const h = drawHood(c, { x: 905, y: 1780, s: .9, T, armL: { wx: lerp(830, 790, k), wy: lerp(1580, 1390, k) }, armR: { wx: lerp(980, 860, k), wy: lerp(1580, 1395, k), b: -1 } }); drawGlowHeart(c, (h.lh.x + h.rh.x) / 2, Math.min(h.lh.y, h.rh.y) - 40, 40, T, k); }
+      else if (!o.close) drawHood(c, { x: 905, y: 1780, s: .9, T, glow: .8 });
+    },
+  }),
+  // fin : seul, tout s'éteint sauf la fente dorée
+  end: (o) => ({
+    cam: (lt, d) => ({ z: 1 + .05 * ease(lt / d), x: 540, y: 1250 }),
+    heat: () => ({ amp: 2, y0: 700, y1: 1400, peak: 1100, spread: 300 }),
+    bg(c, lt, d, T) { const hy = 1350; drawSky(c, { hy, night: 1, stars: .8, clouds: .45, moon: { x: 270, y: 380, r: 55 }, T }); drawRuinsBand(c, hy); drawPillar(c, 170, hy + 25, 80, 720, { seed: 30 }); drawPillar(c, 910, hy + 25, 80, 560, { broken: true, seed: 31 }); drawFloor(c, hy, { night: 1 }); },
+    fg(c, lt, d, T) {
+      const h = drawHood(c, { x: 540, y: 1730, s: 1.0, T });
+      const dark = smooth(o.darkFrom ?? 1.3, d - .4, lt);
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = `rgba(0,0,0,${dark})`; c.fillRect(0, 0, W, H); c.restore();
+      if (dark > .02) drawSlit(c, h.slit.x, h.slit.y, 1, 1.3 * (1 - smooth(d - .4, d - .05, lt)), T);
+    },
+  }),
+  noir: () => ({ cam: () => null, heat: () => null, bg(c) { c.fillStyle = '#000'; c.fillRect(-600, -600, W + 1200, H + 1200); }, fg() { } }),
+};
+
+// ---------- découpage de la chanson (rempli par song-data) ----------
+let SONG_SHOTS = [];       // [{t0, t1, tpl, opt, name}]
+let SONG_END = 0;
+function songTimeline() {
+  return SONG_SHOTS.map(s => ({ s: Object.assign({ name: s.name || s.tpl }, TPL[s.tpl](s.opt || {})), t0: s.t0, t1: s.t1, cut: s.cut }));
+}
+
+// Découpage calé sur « Heat Waves – Glass Animals x HighCloud Cover (Full Version) »
+// Généré à partir de l'analyse de la voix isolée : un plan par ligne chantée.
+SONG_SHOTS = [{"t0": 0.0, "t1": 3.42, "tpl": "think", "opt": {"night": 1}, "name": "Il pense à elle"}, {"t0": 3.42, "t1": 6.36, "tpl": "june", "opt": {"from": 3}, "name": "Les nuits de juin"}, {"t0": 6.36, "t1": 9.32, "tpl": "road", "opt": {"girl": true, "gIn": 0.2, "gOut": 1.9}, "name": "La chaleur le trompe"}, {"t0": 9.32, "t1": 12.11, "tpl": "sad", "opt": {"turnAt": 0.8}, "name": "Il ne la rend plus heureuse"}, {"t0": 12.11, "t1": 13.99, "tpl": "road", "opt": {"amp": 14, "ampUp": 6, "walk": true}, "name": "La route qui ondule"}, {"t0": 13.99, "t1": 18.08, "tpl": "mirror", "opt": {"speed": 1.32}, "name": "Nager dans un miroir"}, {"t0": 18.08, "t1": 19.95, "tpl": "road", "opt": {"amp": 14, "ampUp": 6, "z0": 1.02, "z1": 1.12}, "name": "La route qui ondule"}, {"t0": 19.95, "t1": 23.94, "tpl": "mirror", "opt": {"speed": 1.35}, "name": "Nager dans un miroir"}, {"t0": 23.94, "t1": 27.03, "tpl": "palace", "opt": {}, "name": "Il pense à elle"}, {"t0": 27.03, "t1": 30.02, "tpl": "june", "opt": {"from": 8}, "name": "Les nuits de juin"}, {"t0": 30.02, "t1": 32.98, "tpl": "road", "opt": {"girl": true, "z0": 1.0, "z1": 1.12, "gIn": 0.1, "gOut": 1.8}, "name": "La chaleur le trompe"}, {"t0": 32.98, "t1": 36.16, "tpl": "sad", "opt": {"close": true, "turnAt": 0.7}, "name": "Il ne la rend plus heureuse"}, {"t0": 36.16, "t1": 39.16, "tpl": "think", "opt": {"night": 0.15}, "name": "Il pense à elle"}, {"t0": 39.16, "t1": 41.95, "tpl": "june", "opt": {"from": 13}, "name": "Les nuits de juin"}, {"t0": 41.95, "t1": 44.91, "tpl": "heart", "opt": {"mode": "melt"}, "name": "La chaleur le trompe"}, {"t0": 44.91, "t1": 47.89, "tpl": "sad", "opt": {"turnAt": 0.6}, "name": "Il ne la rend plus heureuse"}, {"t0": 47.89, "t1": 50.34, "tpl": "tv", "opt": {}, "name": "Devant la télé"}, {"t0": 50.34, "t1": 53.82, "tpl": "tv", "opt": {"close": true}, "name": "Ils ne parlent plus d’eux"}, {"t0": 53.82, "t1": 56.29, "tpl": "screen", "opt": {}, "name": "Leurs reflets dans l’écran"}, {"t0": 56.29, "t1": 59.85, "tpl": "screen", "opt": {"label": "HOLLYWOOD"}, "name": "Hollywood sur l’écran"}, {"t0": 59.85, "t1": 62.75, "tpl": "arch", "opt": {}, "name": "Elle mérite mieux"}, {"t0": 62.75, "t1": 65.71, "tpl": "empty", "opt": {}, "name": "Ce qu’il ne peut pas donner"}, {"t0": 65.71, "t1": 68.52, "tpl": "road", "opt": {"water": true, "amp": 12}, "name": "La fausse eau sur la route"}, {"t0": 68.52, "t1": 71.59, "tpl": "road", "opt": {"sunset": true}, "name": "La nuit tombe"}, {"t0": 71.59, "t1": 74.64, "tpl": "palace", "opt": {}, "name": "Il pense à elle"}, {"t0": 74.64, "t1": 77.68, "tpl": "june", "opt": {"from": 17}, "name": "Les nuits de juin"}, {"t0": 77.68, "t1": 80.6, "tpl": "road", "opt": {"girl": true, "gIn": 0.2, "gOut": 1.9}, "name": "La chaleur le trompe"}, {"t0": 80.6, "t1": 83.45, "tpl": "sad", "opt": {"close": true, "turnAt": 0.7}, "name": "Il ne la rend plus heureuse"}, {"t0": 83.45, "t1": 86.18, "tpl": "heart", "opt": {"mode": "chain"}, "name": "Il étouffe"}, {"t0": 86.18, "t1": 88.97, "tpl": "loving", "opt": {}, "name": "Des mots tendres"}, {"t0": 88.97, "t1": 92.42, "tpl": "palace", "opt": {"release": 1.03}, "name": "Il doit la laisser partir"}, {"t0": 92.42, "t1": 95.39, "tpl": "arch", "opt": {"walk": true, "ghost": true}, "name": "Quelqu’un d’autre"}, {"t0": 95.39, "t1": 98.37, "tpl": "alone", "opt": {"night": 0.9}, "name": "Seul"}, {"t0": 98.37, "t1": 101.38, "tpl": "heart", "opt": {"mode": "break", "breakAt": 0.48}, "name": "Ça lui fait mal aussi"}, {"t0": 101.38, "t1": 103.98, "tpl": "cry", "opt": {"tearsAt": 1.37}, "name": "Quand elle pleure"}, {"t0": 103.98, "t1": 107.19, "tpl": "goodbye", "opt": {"waveAt": 1.62}, "name": "L’adieu"}, {"t0": 107.19, "t1": 110.26, "tpl": "think", "opt": {"night": 1}, "name": "Il pense à elle"}, {"t0": 110.26, "t1": 113.26, "tpl": "june", "opt": {"from": 20}, "name": "Les nuits de juin"}, {"t0": 113.26, "t1": 116.21, "tpl": "mirror", "opt": {"speed": 1.83}, "name": "La chaleur le trompe"}, {"t0": 116.21, "t1": 119.29, "tpl": "sad", "opt": {"turnAt": 0.7}, "name": "Il ne la rend plus heureuse"}, {"t0": 119.29, "t1": 122.28, "tpl": "palace", "opt": {"night": 0.45}, "name": "Il pense à elle"}, {"t0": 122.28, "t1": 125.2, "tpl": "june", "opt": {"from": 22}, "name": "Les nuits de juin"}, {"t0": 125.2, "t1": 128.12, "tpl": "heart", "opt": {"mode": "melt"}, "name": "La chaleur le trompe"}, {"t0": 128.12, "t1": 131.06, "tpl": "sad", "opt": {"close": true, "turnAt": 0.6}, "name": "Il ne la rend plus heureuse"}, {"t0": 131.06, "t1": 134.02, "tpl": "sleep", "opt": {}, "name": "À quoi elle rêve"}, {"t0": 134.02, "t1": 137.04, "tpl": "sleep", "opt": {"close": true, "dream": false}, "name": "Elle dort et sourit"}, {"t0": 137.04, "t1": 140.03, "tpl": "sleep", "opt": {"give": true}, "name": "Il voudrait lui donner ça"}, {"t0": 140.03, "t1": 142.94, "tpl": "sleep", "opt": {"give": true, "close": true, "dream": false}, "name": "Un regard sans tristesse"}, {"t0": 142.94, "t1": 145.95, "tpl": "think", "opt": {"night": 0.15}, "name": "Il pense à elle"}, {"t0": 145.95, "t1": 148.99, "tpl": "june", "opt": {"from": 24}, "name": "Les nuits de juin"}, {"t0": 148.99, "t1": 151.98, "tpl": "road", "opt": {"girl": true, "gIn": 0.2, "gOut": 1.9}, "name": "La chaleur le trompe"}, {"t0": 151.98, "t1": 155.09, "tpl": "mirror", "opt": {"speed": 1.74}, "name": "La chaleur le trompe"}, {"t0": 155.09, "t1": 157.78, "tpl": "alone", "opt": {"night": 0.8}, "name": "Respiration"}, {"t0": 157.78, "t1": 160.85, "tpl": "palace", "opt": {}, "name": "Il pense à elle"}, {"t0": 160.85, "t1": 163.85, "tpl": "june", "opt": {"from": 26}, "name": "Les nuits de juin"}, {"t0": 163.85, "t1": 166.82, "tpl": "heart", "opt": {"mode": "melt"}, "name": "La chaleur le trompe"}, {"t0": 166.82, "t1": 169.79, "tpl": "sad", "opt": {"turnAt": 0.6}, "name": "Il ne la rend plus heureuse"}, {"t0": 169.79, "t1": 172.78, "tpl": "think", "opt": {"night": 1}, "name": "Il pense à elle"}, {"t0": 172.78, "t1": 175.81, "tpl": "june", "opt": {"from": 28}, "name": "Les nuits de juin"}, {"t0": 175.81, "t1": 178.75, "tpl": "road", "opt": {"girl": true, "gIn": 0.2, "gOut": 1.5}, "name": "La chaleur le trompe"}, {"t0": 178.75, "t1": 181.7, "tpl": "sad", "opt": {"close": true, "turnAt": 0.5, "wilt0": 0.1}, "name": "Il ne la rend plus heureuse"}, {"t0": 181.7, "t1": 188.6, "tpl": "goodbye", "opt": {"waveAt": 2.4}, "name": "Elle s’en va vers le soleil"}, {"t0": 188.6, "t1": 193.6, "tpl": "alone", "opt": {"night": 1}, "name": "Seul dans le palais"}, {"t0": 193.6, "t1": 205.0, "tpl": "end", "opt": {"darkFrom": 5.5}, "name": "Fin"}];
+SONG_END = 205.0;
+const SONG_TITLE = { t0: 195.6, t1: 201.8 };
+const SONG_LYRICS_TEMPLATE = "# ── PAROLES — version chanson entière ──────────────────────\n# Les temps sont déjà calés sur la voix (une ligne = une ligne chantée).\n# Écris (ou colle) chaque ligne des paroles juste après le « | ».\n# *mot* entre étoiles = EN GROS et EN OR.  Ce qui suit # est ignoré.\n\n# — Refrain (début) —\n0:00.46 |    # ↳ scène : Il pense à elle\n0:03.49 |    # ↳ scène : Les nuits de juin\n0:06.43 |    # ↳ scène : La chaleur le trompe\n0:09.39 |    # ↳ scène : Il ne la rend plus heureuse\n# — Couplet 1 —\n0:12.18 |    # ↳ scène : La route qui ondule\n0:14.06 |    # ↳ scène : Nager dans un miroir\n0:18.15 |    # ↳ scène : La route qui ondule\n0:20.02 |    # ↳ scène : Nager dans un miroir\n# — Refrain —\n0:24.01 |    # ↳ scène : Il pense à elle\n0:27.10 |    # ↳ scène : Les nuits de juin\n0:30.09 |    # ↳ scène : La chaleur le trompe\n0:33.05 |    # ↳ scène : Il ne la rend plus heureuse\n# — Refrain —\n0:36.23 |    # ↳ scène : Il pense à elle\n0:39.23 |    # ↳ scène : Les nuits de juin\n0:42.02 |    # ↳ scène : La chaleur le trompe\n0:44.98 |    # ↳ scène : Il ne la rend plus heureuse\n# — Couplet 2 —\n0:47.96 |    # ↳ scène : Devant la télé\n0:50.41 |    # ↳ scène : Ils ne parlent plus d’eux\n0:53.89 |    # ↳ scène : Leurs reflets dans l’écran\n0:56.36 |    # ↳ scène : Hollywood sur l’écran\n0:59.92 |    # ↳ scène : Elle mérite mieux\n1:02.82 |    # ↳ scène : Ce qu’il ne peut pas donner\n1:05.78 |    # ↳ scène : La fausse eau sur la route\n1:08.59 |    # ↳ scène : La nuit tombe\n# — Refrain —\n1:11.66 |    # ↳ scène : Il pense à elle\n1:14.71 |    # ↳ scène : Les nuits de juin\n1:17.75 |    # ↳ scène : La chaleur le trompe\n1:20.67 |    # ↳ scène : Il ne la rend plus heureuse\n# — Pont —\n1:23.52 |    # ↳ scène : Il étouffe\n1:26.25 |    # ↳ scène : Des mots tendres\n1:29.04 |    # ↳ scène : Il doit la laisser partir\n1:32.49 |    # ↳ scène : Quelqu’un d’autre\n1:35.46 |    # ↳ scène : Seul\n1:38.44 |    # ↳ scène : Ça lui fait mal aussi\n1:41.45 |    # ↳ scène : Quand elle pleure\n1:44.05 |    # ↳ scène : L’adieu\n# — Refrain —\n1:47.26 |    # ↳ scène : Il pense à elle\n1:50.33 |    # ↳ scène : Les nuits de juin\n1:53.33 |    # ↳ scène : La chaleur le trompe\n1:56.28 |    # ↳ scène : Il ne la rend plus heureuse\n# — Refrain —\n1:59.36 |    # ↳ scène : Il pense à elle\n2:02.35 |    # ↳ scène : Les nuits de juin\n2:05.27 |    # ↳ scène : La chaleur le trompe\n2:08.19 |    # ↳ scène : Il ne la rend plus heureuse\n# — Couplet final —\n2:11.13 |    # ↳ scène : À quoi elle rêve\n2:14.09 |    # ↳ scène : Elle dort et sourit\n2:17.11 |    # ↳ scène : Il voudrait lui donner ça\n2:20.10 |    # ↳ scène : Un regard sans tristesse\n# — Refrain —\n2:23.01 |    # ↳ scène : Il pense à elle\n2:26.02 |    # ↳ scène : Les nuits de juin\n2:29.06 |    # ↳ scène : La chaleur le trompe\n2:32.05 |    # ↳ scène : La chaleur le trompe\n# — Refrain —\n2:37.85 |    # ↳ scène : Il pense à elle\n2:40.92 |    # ↳ scène : Les nuits de juin\n2:43.92 |    # ↳ scène : La chaleur le trompe\n2:46.89 |    # ↳ scène : Il ne la rend plus heureuse\n# — Dernier refrain —\n2:49.86 |    # ↳ scène : Il pense à elle\n2:52.85 |    # ↳ scène : Les nuits de juin\n2:55.88 |    # ↳ scène : La chaleur le trompe\n2:58.82 |    # ↳ scène : Il ne la rend plus heureuse\n3:01.60 |    # (fin des paroles)\n";
+const SONG_LINES = [{"sec": "R0", "lab": "pense", "t": 0.51}, {"sec": "R0", "lab": "juin", "t": 3.54}, {"sec": "R0", "lab": "mirage", "t": 6.48}, {"sec": "R0", "lab": "happier", "t": 9.44}, {"sec": "C1", "lab": "route", "t": 12.23}, {"sec": "C1", "lab": "miroir", "t": 14.11}, {"sec": "C1", "lab": "route2", "t": 18.2}, {"sec": "C1", "lab": "miroir2", "t": 20.07}, {"sec": "R1", "lab": "pense", "t": 24.06}, {"sec": "R1", "lab": "juin", "t": 27.15}, {"sec": "R1", "lab": "mirage", "t": 30.14}, {"sec": "R1", "lab": "happier", "t": 33.1}, {"sec": "R2", "lab": "pense", "t": 36.28}, {"sec": "R2", "lab": "juin", "t": 39.28}, {"sec": "R2", "lab": "mirage", "t": 42.07}, {"sec": "R2", "lab": "happier", "t": 45.03}, {"sec": "C2", "lab": "tele", "t": 48.01}, {"sec": "C2", "lab": "jamais-nous", "t": 50.46}, {"sec": "C2", "lab": "reflets", "t": 53.94}, {"sec": "C2", "lab": "ecran", "t": 56.41}, {"sec": "C2", "lab": "vie-meilleure", "t": 59.97}, {"sec": "C2", "lab": "jamais-donner", "t": 62.87}, {"sec": "C2", "lab": "fausse-eau", "t": 65.83}, {"sec": "C2", "lab": "nuit", "t": 68.64}, {"sec": "R3", "lab": "pense", "t": 71.71}, {"sec": "R3", "lab": "juin", "t": 74.76}, {"sec": "R3", "lab": "mirage", "t": 77.8}, {"sec": "R3", "lab": "happier", "t": 80.72}, {"sec": "P", "lab": "etouffe", "t": 83.57}, {"sec": "P", "lab": "tendre", "t": 86.3}, {"sec": "P", "lab": "lacher", "t": 89.09}, {"sec": "P", "lab": "quelqu-un", "t": 92.54}, {"sec": "P", "lab": "seul", "t": 95.51}, {"sec": "P", "lab": "blesse", "t": 98.49}, {"sec": "P", "lab": "pleure", "t": 101.5}, {"sec": "P", "lab": "adieu", "t": 104.1}, {"sec": "R4", "lab": "pense", "t": 107.31}, {"sec": "R4", "lab": "juin", "t": 110.38}, {"sec": "R4", "lab": "mirage", "t": 113.38}, {"sec": "R4", "lab": "happier", "t": 116.33}, {"sec": "R5", "lab": "pense", "t": 119.41}, {"sec": "R5", "lab": "juin", "t": 122.4}, {"sec": "R5", "lab": "mirage", "t": 125.32}, {"sec": "R5", "lab": "happier", "t": 128.24}, {"sec": "F", "lab": "reve", "t": 131.18}, {"sec": "F", "lab": "sourire", "t": 134.14}, {"sec": "F", "lab": "donner", "t": 137.16}, {"sec": "F", "lab": "regard", "t": 140.15}, {"sec": "R6", "lab": "pense", "t": 143.06}, {"sec": "R6", "lab": "juin", "t": 146.07}, {"sec": "R6", "lab": "mirage", "t": 149.11}, {"sec": "R6", "lab": "mirage2", "t": 152.1}, {"sec": "R7", "lab": "pense", "t": 157.9}, {"sec": "R7", "lab": "juin", "t": 160.97}, {"sec": "R7", "lab": "mirage", "t": 163.97}, {"sec": "R7", "lab": "happier", "t": 166.94}, {"sec": "R8", "lab": "pense", "t": 169.91}, {"sec": "R8", "lab": "juin", "t": 172.9}, {"sec": "R8", "lab": "mirage", "t": 175.93}, {"sec": "R8", "lab": "happier", "t": 178.87}];
 
 </script>
 <script>
@@ -1093,7 +1531,7 @@ const audio = new Audio(); audio.preload = 'auto';
 let audioOK = false, actx = null, audioDest = null;
 const st = { T: 0, playing: false, t0: 0, T0: 0, exporting: null, tap: null };
 
-function audioStart() { return Math.max(0, parseFloat($('audioStart').value) || 0); }
+function audioStart() { return CFG.mode === 'song' ? 0 : Math.max(0, parseFloat($('audioStart').value) || 0); }
 function clock() { return audioOK ? audio.currentTime - audioStart() : st.T0 + (performance.now() - st.t0) / 1000; }
 function play() {
   if (st.T >= duration() - .05) st.T = 0;
@@ -1123,7 +1561,10 @@ function tick() {
   requestAnimationFrame(tick);
 }
 
-function saveLocal() { try { localStorage.setItem('hw_lyrics', $('lyrics').value); localStorage.setItem('hw_start', $('audioStart').value); } catch (e) { } }
+function saveLocal() { try { localStorage.setItem('hw_lyrics_' + CFG.mode, $('lyrics').value); localStorage.setItem('hw_start', $('audioStart').value); } catch (e) { } }
+function defaultLyrics() { return CFG.mode === 'song' && typeof SONG_LYRICS_TEMPLATE === 'string' ? SONG_LYRICS_TEMPLATE : LYRICS_TEMPLATE; }
+function loadLyricsFor(mode) { let v = null; try { v = localStorage.getItem('hw_lyrics_' + mode); } catch (e) { } $('lyrics').value = v || defaultLyrics(); }
+function setMode(m) { CFG.mode = m; pause(); st.T = 0; $('startRow').style.display = m === 'song' ? 'none' : ''; loadLyricsFor(m); applyLyrics(); }
 function applyLyrics() { CFG.lyricsText = $('lyrics').value; CFG.showTitle = $('showTitle').checked; refreshCaptions(); saveLocal(); }
 
 // ---------- synchro au tap ----------
@@ -1175,7 +1616,7 @@ async function exportVideo() {
   await new Promise(r => { rec.onstop = r; rec.stop(); });
   const type = (mime || 'video/webm').split(';')[0], ext = type.includes('mp4') ? 'mp4' : 'webm';
   const url = URL.createObjectURL(new Blob(chunks, { type }));
-  $('dl').innerHTML = `<a href="${url}" download="heatwaves.${ext}">⬇ Télécharger heatwaves.${ext}</a>` + (ext === 'webm' ? '<p class="note">Format WebM : CapCut et TikTok l’acceptent. Pour du MP4, utilise un Chrome récent.</p>' : '');
+  $('dl').innerHTML = `<a href="${url}" download="heatwaves-${CFG.mode === 'song' ? 'chanson' : 'court'}.${ext}">⬇ Télécharger la vidéo (.${ext})</a>` + (ext === 'webm' ? '<p class="note">Format WebM : CapCut et TikTok l’acceptent. Pour du MP4, utilise un Chrome récent.</p>' : '');
   $('dl').classList.add('on'); $('exportBtn').disabled = false;
   $('exportInfo').textContent = '✓ Export terminé.';
   cv.width = 1080; cv.height = 1920;
@@ -1186,8 +1627,11 @@ async function boot() {
   try { await document.fonts.load('700 60px Oswald'); await document.fonts.load('600 30px Oswald'); } catch (e) { }
   initTextures();
   if (!RENDER) {
-    let saved = null, savedStart = null; try { saved = localStorage.getItem('hw_lyrics'); savedStart = localStorage.getItem('hw_start'); } catch (e) { }
-    $('lyrics').value = saved || LYRICS_TEMPLATE; if (savedStart) $('audioStart').value = savedStart;
+    let savedStart = null; try { savedStart = localStorage.getItem('hw_start'); } catch (e) { }
+    if (savedStart) $('audioStart').value = savedStart;
+    if (typeof SONG_SHOTS !== 'undefined' && SONG_SHOTS.length) CFG.mode = 'song';
+    $('version').value = CFG.mode; $('startRow').style.display = CFG.mode === 'song' ? 'none' : '';
+    loadLyricsFor(CFG.mode);
   }
   CFG.lyricsText = RENDER ? '' : $('lyrics').value; refreshCaptions();
   ready = true;
@@ -1209,12 +1653,14 @@ async function boot() {
     if (e.code === 'Space') { e.preventDefault(); if (st.tap) tapNow(); else (st.playing ? pause() : play()); }
   });
   $('exportBtn').onclick = exportVideo;
+  $('version').onchange = e => setMode(e.target.value);
   requestAnimationFrame(tick);
 }
 
 // API utilisée par le script de rendu (tools/render.js)
 window.HW = {
   duration,
+  setMode(m) { CFG.mode = m; refreshCaptions(); },
   setLyrics(text, showTitle = true) { CFG.lyricsText = text; CFG.showTitle = showTitle; refreshCaptions(); },
   setTitle(on) { CFG.showTitle = on; refreshCaptions(); },
   frame(t, type = 'image/jpeg', q = .93) { const out = renderAt(t); return out.toDataURL(type, q); },

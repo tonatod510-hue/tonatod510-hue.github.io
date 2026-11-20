@@ -5,11 +5,26 @@ perso à capuche sans visage avec la fente dorée, décor de palais en ruines, t
 ondulations de chaleur, sous-titres blancs avec le mot-clé **en gros et en or**.
 Tout est dessiné en code (canvas JavaScript), rien n'est copié de la vidéo d'origine.
 
+## Version « chanson entière » (3:25, calée sur la voix)
+
+Le studio (`index.html`) s'ouvre maintenant par défaut sur la **chanson entière**, calée sur le fichier
+« Heat Waves – Glass Animals x HighCloud Cover (Full Version) ». Il y a 64 plans, **un par ligne chantée**,
+et chaque geste tombe sur le bon mot : les mains se lâchent sur « let you go », le cœur se brise sur
+« hurts », les larmes coulent sur « cry », il fait au revoir sur « goodbye », etc.
+
+Comment c'est calé : la voix a été isolée du morceau (MDX-Net), puis chaque début de ligne a été repéré
+(reconnaissance vocale sur des fenêtres de 3 s + attaque de la voix, précision ≈ 0,1–0,2 s).
+Les refrains tombent pile sur la grille du morceau (une ligne = une mesure de 2,97 s à 80,75 BPM).
+
+Pour voir la version complète avec le son : ouvre `index.html`, choisis ton fichier audio, appuie sur Lecture.
+Les temps des paroles sont déjà écrits dans la zone « Paroles » : il suffit d'écrire chaque ligne après le « | ».
+Le son et la vidéo avec le son ne sont **pas** dans ce dépôt (droits d'auteur) : ils restent chez toi.
+
 ## Les fichiers
 
 | Fichier | Quoi |
 |---|---|
-| `heatwaves.mp4` | La vidéo finie, **sans son et sans paroles** (juste le titre au début). |
+| `heatwaves.mp4` | La version courte (45 s), **sans son et sans paroles**. |
 | `index.html` | Le « studio » : aperçu, ajout du son + des paroles, export vidéo. Marche hors-ligne. |
 | `tools/render.js` | Rendu image par image en MP4 parfait (pour ceux qui ont Node.js). |
 
@@ -51,4 +66,5 @@ npm i playwright && npx playwright install chromium   # + ffmpeg installé
 node tools/render.js heatwaves.mp4                     # vidéo sans paroles
 node tools/render.js avec-paroles.mp4 --lyrics paroles.txt
 node tools/render.js test.mp4 --stills 2,8,14          # quelques images PNG pour vérifier
+node tools/render.js chanson.mp4 --song --audio heatwaves.mp3 [--lyrics paroles.txt]   # chanson entière avec le son
 ```
