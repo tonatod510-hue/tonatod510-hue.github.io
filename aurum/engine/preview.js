@@ -1,0 +1,20 @@
+// Aperçu des décors : window.show(name, T)
+initCore();
+const SETS = {
+  bed: (c, T) => { setBedroom(c, { T, time: 'night', clock: '05:59' }); bedScene(c, { T, e: exprParams('worried'), lookY: -.7 }); },
+  dawn: (c, T) => { setBedroom(c, { T, time: 'dawn', curtain: 1, clock: '06:04' }); drawPerson(c, 'ayaPJ', { x: 1300, y: 1000, s: .95, T, expr: 'tired', turn: .4, back: false, armL: 'down', armR: 'down' }); },
+  mirror: (c, T) => { setMirror(c, { T }, (x, mx, my, rx, ry) => drawPerson(x, 'aya', { x: mx, y: my + ry + 40, s: 1.15, T, expr: 'nervous', flip: true, armL: 'wave', armR: 'strap' })); drawPerson(c, 'aya', { x: 330, y: 1500, s: 1.6, T, back: true, noShadow: true }); },
+  kitchen: (c, T) => { setKitchen(c, { T }); drawPerson(c, 'timi', { x: 760, y: 1010, s: 1.0, T, expr: 'laugh', armL: 'down', armR: 'point' }); kitchenTable(c, 800, 790, 700, T); drawPerson(c, 'mom', { x: 1560, y: 1020, s: .95, T, expr: 'smile', turn: -.4, armR: 'hold' }); drawPerson(c, 'aya', { x: 280, y: 1040, s: .95, T, expr: 'deadpan', turn: .3, armL: 'strap', armR: 'strap' }); },
+  door: (c, T) => { setEntrance(c, { T, open: .7 }); drawPerson(c, 'aya', { x: 960, y: 1010, s: .95, T, back: true, armL: 'strap', armR: 'strap' }); },
+  street: (c, T) => { setStreet(c, { T, scroll: 900 }); crowd(c, T, [{ x: 300, y: 900, s: .55, k: 1, vx: 40 }, { x: 1500, y: 905, s: .55, k: 2, vx: -50 }], .2); drawPerson(c, 'aya', { x: 960, y: 1010, s: .82, T, expr: 'worried', walk: T * 6.5, armL: 'strap', armR: 'strap' }); },
+  gate: (c, T) => { setGate(c, { T }); crowd(c, T, [{ x: 860, y: 880, s: .42, k: 3, back: true, vx: 0 }, { x: 1050, y: 885, s: .42, k: 4, back: true }, { x: 700, y: 900, s: .5, k: 5, back: true }, { x: 1250, y: 900, s: .5, k: 6, back: true }], .15); drawPerson(c, 'aya', { x: 960, y: 1180, s: .95, T, back: true, armL: 'strap', armR: 'strap', noShadow: true }); },
+  court: (c, T) => { setCourtyard(c, { T }); crowd(c, T, [{ x: 400, y: 760, s: .45, k: 1, talk: 1, turn: .4 }, { x: 470, y: 762, s: .45, k: 2, turn: -.4 }, { x: 1200, y: 770, s: .45, k: 3 }], .2); drawPerson(c, 'vic', { x: 1060, y: 1020, s: .9, T, expr: 'cold', turn: -.4, armL: 'hips', armR: 'down' }); drawPerson(c, 'fol1', { x: 1290, y: 1000, s: .82, T, expr: 'smirk', turn: -.5 }); drawPerson(c, 'fol2', { x: 1470, y: 1000, s: .82, T, expr: 'smirk', turn: -.5 }); drawPerson(c, 'aya', { x: 700, y: 1030, s: .9, T, expr: 'nervous', turn: .4, armL: 'hold', armR: 'hold' }); },
+  front: (c, T) => { setClassFront(c, { T }); drawPerson(c, 'morel', { x: 1420, y: 960, s: .82, T, expr: 'neutral', turn: -.3, armL: 'hips', armR: 'down' }); drawPerson(c, 'aya', { x: 880, y: 960, s: .85, T, expr: 'nervous', armL: 'strap', armR: 'strap' }); studentBacks(c, T, 980, 6, 80); },
+  room: (c, T) => { setClassroom(c, { T, doorOpen: 0 }); const rows = [[700, .55, ['st1', 'vic', 'fol1', 'st3']], [800, .68, ['st2', 'nina', 'st4', 'st1']], [930, .82, ['st3', 'st2', 'aya', null]]]; for (const [y, s, who] of rows) { who.forEach((w, i) => { const x = 420 + i * 340 * (s / .68) - (s - .68) * 300; if (w) drawPerson(c, w, { x, y: y + 330 * s, s, T: T + i, expr: w === 'vic' ? 'smirk' : 'neutral', seed: i + y }); desk(c, x, y, 230 * s / .68, s); }); } },
+  lunch: (c, T) => { setLunch(c, { T }); drawPerson(c, 'nina', { x: 780, y: 1060, s: .9, T, expr: 'excited', turn: .35, armL: 'hold', armR: 'point' }); drawPerson(c, 'aya', { x: 1140, y: 1060, s: .9, T, expr: 'curious', turn: -.35 }); lunchTable(c, 960, 830, 760, T); },
+  note: (c, T) => insertNote(c, { T }),
+  title: (c, T) => titleCard(c, { T, k: 1 }),
+  night: (c, T) => { setBedroom(c, { T, time: 'night', lamp: true, clock: '21:47', rooftop: 1, curtain: 1 }); },
+};
+window.show = (name, T = 2) => { const c = OX; c.setTransform(SCALE, 0, 0, SCALE, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, W, H); SETS[name](c, T); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(VIGN, 0, 0); return cv.toDataURL('image/jpeg', .9); };
+document.fonts.load('700 40px Oswald').then(() => { window.__ready = true; });
