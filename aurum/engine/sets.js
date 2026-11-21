@@ -89,7 +89,7 @@ function setBedroom(c, o) {
   if (o.rooftop != null) {
     c.fillStyle = '#0a0a0c'; c.fillRect(wx - 20, wy + wh - 150, ww + 40, 200);
     c.fillStyle = '#141418'; c.fillRect(wx + 300, wy + wh - 210, 160, 70);
-    if (o.rooftop > 0) { c.save(); c.globalAlpha = o.rooftop; drawNox(c, { x: wx + 380, y: wy + wh - 150, s: .2, T, noShadow: true, glow: 1.6 }); c.restore(); }
+    if (o.rooftop > 0) { c.save(); c.globalAlpha = o.rooftop; drawNox(c, { x: wx + 410, y: wy + wh - 150, s: .27, T, noShadow: true, glow: 1.8 }); c.restore(); }
   }
   c.restore();
   // cadre fenêtre + croisillons
@@ -317,13 +317,19 @@ function schoolClock(c, x, y, r, h, m) {
   c.lineWidth = 4; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(ah) * r * .5, y + Math.sin(ah) * r * .5); c.stroke();
   c.lineWidth = 3; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(am) * r * .78, y + Math.sin(am) * r * .78); c.stroke();
 }
+// feuillage : union de cercles, contour net autour de l'ensemble (pas de cercles visibles à l'intérieur)
+function canopy(c, L, T, dx) {
+  const P = g => { const p = new Path2D(); for (const [lx, ly, r] of L) { const xx = lx + Math.sin(T * .8 + lx) * 3; p.moveTo(xx + r + g, ly); p.arc(xx, ly, r + g, 0, TAU); } return p; };
+  c.fillStyle = '#140d06'; c.fill(P(4));
+  const xs = L.map(l => l[0]); const p0 = P(0);
+  paint(c, p0, { fill: goldGrad(c, Math.min(...xs) - 150, Math.max(...xs) + 150, 0), dots: PAT.dark, dx, da: .55, stroke: false });
+  c.save(); c.clip(p0); c.strokeStyle = 'rgba(60,40,15,.35)'; c.lineWidth = 3; for (const [lx, ly, r] of L) { c.beginPath(); c.arc(lx, ly + r * .25, r * .7, PI * 1.1, PI * 1.6); c.stroke(); } c.restore();
+}
 function goldTree(c, x, base, s, T) {
   const tr = new Path2D(); tr.moveTo(x - 22 * s, base); tr.quadraticCurveTo(x - 10 * s, base - 160 * s, x - 30 * s, base - 300 * s); tr.lineTo(x + 26 * s, base - 300 * s); tr.quadraticCurveTo(x + 10 * s, base - 160 * s, x + 22 * s, base); tr.closePath();
   paint(c, tr, { fill: '#3e2e1a', stroke: '#140d06', lw: 3 });
   const L = []; for (let k = 0; k < 9; k++) L.push([x + (hash(k * 3 + s) - .5) * 260 * s, base - 330 * s - hash(k * 7 + s) * 170 * s, (70 + hash(k * 11) * 50) * s]);
-  const cp = new Path2D(); for (const [lx, ly, r] of L) { cp.moveTo(lx + r, ly); cp.arc(lx + Math.sin(T * .8 + lx) * 3, ly, r, 0, TAU); }
-  c.fillStyle = '#140d06'; c.save(); c.translate(0, 0); c.lineWidth = 6; c.strokeStyle = '#140d06'; c.stroke(cp); c.restore();
-  paint(c, cp, { fill: goldGrad(c, x - 200 * s, x + 200 * s, 0), dots: PAT.dark, dx: x + 40 * s, da: .55, stroke: false });
+  canopy(c, L, T, x + 40 * s);
 }
 
 // ---------- COUR ----------
@@ -407,8 +413,7 @@ function setLunch(c, o) {
   floorTiles(c, fl, { c0: '#5a4428', c1: '#171009' });
   // grand arbre doré (canopée en haut du cadre)
   const tr = rect(1460, 140, 90, fl - 120); paint(c, tr, { fill: '#3e2e1a', stroke: '#140d06', lw: 3 });
-  const cp = new Path2D(); for (let k = 0; k < 14; k++) { const lx = 900 + hash(k * 4.1) * 1100, ly = -40 + hash(k * 8.3) * 220, r = 90 + hash(k) * 80; cp.moveTo(lx + r, ly); cp.arc(lx, ly, r, 0, TAU); }
-  paint(c, cp, { fill: goldGrad(c, 900, 2000, 0), dots: PAT.dark, dx: 1500, da: .55, stroke: '#140d06', lw: 4 });
+  canopy(c, Array.from({ length: 14 }, (_, k) => [900 + hash(k * 4.1) * 1100, -40 + hash(k * 8.3) * 220, 90 + hash(k) * 80]), T, 1500);
   // lumière tachetée
   for (let k = 0; k < 18; k++) { const x = 300 + hash(k * 2.2) * 1500, y = 760 + hash(k * 5.5) * 260; c.fillStyle = `rgba(255,225,160,${.12 + .08 * Math.sin(T * 1.5 + k)})`; c.beginPath(); c.ellipse(x, y, 60, 14, 0, 0, TAU); c.fill(); }
 }
