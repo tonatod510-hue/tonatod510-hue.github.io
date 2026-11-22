@@ -11,7 +11,7 @@ window.show = () => {
   const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(.35, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H);
   const gt = c.createLinearGradient(0, 120, 0, 290); gt.addColorStop(0, '#fbe6b8'); gt.addColorStop(.5, '#dcb172'); gt.addColorStop(1, '#a87a42');
   txt(c, 'AURUM', 1330, 300, 210, { fill: gt, ls: 34, shadow: 'rgba(0,0,0,.85)', blur: 30, sy: 6 });
-  txt(c, 'ÉPISODE 1 — LE PREMIER JOUR', 1330, 380, 40, { fill: '#efe3cb', ls: 9, weight: 600, shadow: 'rgba(0,0,0,.8)', blur: 10 });
+  txt(c, 'ÉPISODE 1 LE PREMIER JOUR', 1330, 380, 40, { fill: '#efe3cb', ls: 9, weight: 600, shadow: 'rgba(0,0,0,.8)', blur: 10 });
   c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(VIGN, 0, 0);
   return cv.toDataURL('image/jpeg', .95);
 };
