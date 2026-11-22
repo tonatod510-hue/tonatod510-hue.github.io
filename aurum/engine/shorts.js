@@ -14,6 +14,25 @@ const SHORTS = {
     focus: { 'Nox entre': [[0, 'nox']], "Personne ne m'avait parlé de lui": [[0, 'nox'], [2.3, 'aya']] },
     tagY: 255, titleY: 360, capX: 500, endText: ['LA SUITE ?', 'ABONNE-TOI'],
   },
+  // TikTok : l'épisode entier découpé en 3 parties (chacune > 1 min), différent des Shorts YouTube
+  p1: {
+    title: ['PARTIE 1'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 1/3', hookFade: 4,
+    segs: [[0, 13.54], [20.04, 81.37]], // sans le générique
+    focus: { 'La photo de famille': [[0, 'photo']], 'Miroir — essai 1': [[0, 1010]] },
+    tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['PARTIE 2', 'ABONNE-TOI POUR LA SUITE'],
+  },
+  p2: {
+    title: ['PARTIE 2'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 2/3', hookFade: 4,
+    segs: [[81.37, 168.6]], // jusqu'à Nox dans l'encadrement de la porte
+    focus: { 'Tous les regards': [[0, 'vic']], 'Réactions': [[0, 'vic'], [1.4, 'nina']], 'Nox entre': [[0, 'nox']] },
+    tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['PARTIE 3', 'ABONNE-TOI POUR LA SUITE'],
+  },
+  p3: {
+    title: ['PARTIE 3'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 3/3', hookFade: 4,
+    segs: [[164.13, 221.69]],
+    focus: { 'Nox entre': [[0, 'nox']], "Personne ne m'avait parlé de lui": [[0, 'nox'], [2.3, 'aya']], 'Le mot': [[0, 'FIT']], 'À la fenêtre': [[0, 'aya'], [1.1, ['aya', 'nox']], [3.9, 'aya']] },
+    tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['ÉPISODE 2 : « N. »', 'ABONNE-TOI POUR LA SUITE'], endF: 96, // carte de fin de 4 s : la partie dépasse bien 1 min
+  },
   s2: {
     title: ['PREMIER JOUR,', 'PREMIÈRE ENNEMIE'],
     segs: [[98.52, 140.49]],
@@ -38,6 +57,7 @@ function rawTarget(cfg, T) {
   const vis = {}; for (const id of [...MAIN, 'photo']) { const f = FOCUS[id]; if (f && f.x > -60 && f.x < W + 60 && f.k > .12) vis[id] = f; }
   let want = null; if (ov) for (const [t0, v] of ov) if (lt >= t0) want = v;
   if (want === 'FIT') return { fit: true, shot: sh.start };
+  if (typeof want === 'number') return { x: want, shot: sh.start }; // position fixe (ex. le reflet dans le miroir)
   if (want) { const ids = [].concat(want).filter(id => vis[id]); if (ids.length) return { x: ids.reduce((s, id) => s + vis[id].x, 0) / ids.length, shot: sh.start }; }
   // réplique en cours (la plus récemment commencée), sinon la dernière dite dans ce plan
   let ln = EPI.lines.filter(l => T >= l.t0 - .2 && T <= l.t1 + .35).pop();
@@ -63,7 +83,7 @@ function prepare(id) {
   for (let f = 1; f < n; f++) if (raw[f].shot === raw[f - 1].shot && !raw[f].fit) fw[f] = fw[f - 1] + a * (xs[f] - fw[f - 1]);
   for (let f = n - 2; f >= 0; f--) if (raw[f].shot === raw[f + 1].shot && !raw[f].fit) bw[f] = bw[f + 1] + a * (fw[f] - bw[f + 1]); else bw[f] = fw[f];
   bw[n - 1] = fw[n - 1];
-  return { n, end: END_F, path: raw.map((r, f) => r.fit ? { fit: 1 } : { x: clamp(bw[f], CW / 2, W - CW / 2) }) };
+  return { n, end: cfg.endF || END_F, path: raw.map((r, f) => r.fit ? { fit: 1 } : { x: clamp(bw[f], CW / 2, W - CW / 2) }) };
 }
 
 // --- sous-titres : courts morceaux, au rythme de la voix
@@ -87,12 +107,14 @@ function caption(c, ch, T, y, cx = OW / 2 - 20) {
   lines.forEach((ln, i) => { const yy = (i - (lines.length - 1) / 2) * 104; c.lineWidth = 16; c.strokeStyle = 'rgba(0,0,0,.92)'; c.strokeText(ln, 0, yy); c.fillStyle = ch.nar ? '#f3cf8a' : '#ffffff'; c.fillText(ln, 0, yy); });
   c.restore();
 }
-function hook(c, cfg) {
+function hook(c, cfg, t = 0) {
+  const big = cfg.hookFade ? 1 - smooth(cfg.hookFade, cfg.hookFade + .6, t) : 1;
+  c.save(); c.globalAlpha = .45 + .55 * big;
   const g = c.createLinearGradient(0, 0, 0, 560); g.addColorStop(0, 'rgba(0,0,0,.82)'); g.addColorStop(.6, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-  c.fillStyle = g; c.fillRect(0, 0, OW, 560);
-  txt(c, 'AURUM  ·  ÉPISODE 1', OW / 2, cfg.tagY ?? 200, 30, { fill: '#e8dcc4', ls: 8, weight: 600 });
+  c.fillStyle = g; c.fillRect(0, 0, OW, 560 * (.5 + .5 * big)); c.restore();
+  txt(c, cfg.tag || 'AURUM  ·  ÉPISODE 1', OW / 2, cfg.tagY ?? 200, 30, { fill: '#e8dcc4', ls: 8, weight: 600 });
   const gt = c.createLinearGradient(0, 240, 0, 420); gt.addColorStop(0, '#fbe6b8'); gt.addColorStop(.5, '#dcb172'); gt.addColorStop(1, '#a87a42');
-  cfg.title.forEach((ln, i) => txt(c, ln, OW / 2, (cfg.titleY ?? 310) + i * 96, 88, { fill: gt, ls: 3, shadow: 'rgba(0,0,0,.9)', blur: 18, sy: 4 }));
+  if (big > 0) { c.save(); c.globalAlpha = big; cfg.title.forEach((ln, i) => txt(c, ln, OW / 2, (cfg.titleY ?? 310) + i * 96, cfg.hookFade ? 120 : 88, { fill: gt, ls: 3, shadow: 'rgba(0,0,0,.9)', blur: 18, sy: 4 })); c.restore(); }
 }
 function eclipse(c, x, y, r, T) {
   c.save(); c.translate(x, y);
@@ -102,7 +124,7 @@ function eclipse(c, x, y, r, T) {
   for (const sd of [-1, 1]) { c.save(); c.translate(sd * r * .33, -r * .08); c.rotate(sd * .12); c.beginPath(); c.moveTo(-r * .25, 0); c.quadraticCurveTo(0, -r * .1, r * .25, 0); c.quadraticCurveTo(0, r * .06, -r * .25, 0); c.fill(); c.restore(); }
   c.restore();
 }
-function endShort(c, k, T, lines = ["L'ÉPISODE 1 EN ENTIER", 'SUR LA CHAÎNE']) {
+function endShort(c, k, T, lines = ["L'ÉPISODE 1 EN ENTIER", 'SUR LA CHAÎNE'], big = 'AURUM') {
   c.save(); c.globalAlpha = smooth(0, .25, k);
   c.fillStyle = '#050403'; c.fillRect(0, 0, OW, OH);
   const g = c.createRadialGradient(OW / 2, 820, 20, OW / 2, 820, 760); g.addColorStop(0, 'rgba(214,160,80,.32)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, OW, OH);
@@ -110,7 +132,7 @@ function endShort(c, k, T, lines = ["L'ÉPISODE 1 EN ENTIER", 'SUR LA CHAÎNE'])
   c.save(); c.globalAlpha = smooth(.1, .45, k); eclipse(c, OW / 2, 760, 150, T); c.restore();
   c.save(); c.globalAlpha = smooth(.25, .6, k);
   const gt = c.createLinearGradient(0, 1000, 0, 1130); gt.addColorStop(0, '#fbe6b8'); gt.addColorStop(.5, '#dcb172'); gt.addColorStop(1, '#a87a42');
-  txt(c, 'AURUM', OW / 2, 1120, 150, { fill: gt, ls: 24, shadow: 'rgba(0,0,0,.85)', blur: 24, sy: 4 });
+  txt(c, big, OW / 2, 1120, big === 'AURUM' ? 150 : 128, { fill: gt, ls: big === 'AURUM' ? 24 : 14, shadow: 'rgba(0,0,0,.85)', blur: 24, sy: 4 });
   c.restore();
   c.save(); c.globalAlpha = smooth(.4, .75, k);
   lines.forEach((ln, i) => txt(c, ln, OW / 2, 1250 + i * 75, 54, { fill: '#efe3cb', ls: 6, weight: 600 }));
@@ -125,10 +147,10 @@ window.SH = {
     const cfg = SHORTS[CUR], c = SX; c.setTransform(1, 0, 0, 1, 0, 0);
     if (f >= PLAN.n) {
       const fl = PLAN.n - 1, m = frameToT(cfg, fl), p = PLAN.path[fl]; renderAt(m.T); compose(c, p);
-      endShort(c, (f - PLAN.n) / PLAN.end * 2.3, (f - PLAN.n) / SFPS, cfg.endText);
+      endShort(c, (f - PLAN.n) / PLAN.end * 2.3, (f - PLAN.n) / SFPS, cfg.endText, cfg.endBig);
     } else {
       const m = frameToT(cfg, f), p = PLAN.path[f]; renderAt(m.T); compose(c, p);
-      hook(c, cfg);
+      hook(c, cfg, f / SFPS);
       const ch = CHK.find(x => m.T >= x.t0 && m.T < x.t1); if (ch) caption(c, ch, m.T, p.fit ? 1420 : 1390, cfg.capX);
     }
     return SCV.toDataURL('image/jpeg', q);
