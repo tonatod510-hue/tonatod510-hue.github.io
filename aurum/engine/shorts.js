@@ -138,3 +138,35 @@ function compose(c, p) {
     const sx = clamp(Math.round((p.x - CW / 2) * SCALE), 0, PX - OW); c.drawImage(cv, sx, 0, OW, PY, 0, 0, OW, OH);
   }
 }
+
+// --- miniatures verticales des Shorts (1080×1920)
+const THUMBS = {
+  s1: { T: 178.3, on: 'nox', title: ["PERSONNE N'A", 'JAMAIS VU', 'SON VISAGE'], y: 360 },
+  s2: { T: 115.9, on: 'vic', title: ['PREMIER JOUR,', 'PREMIÈRE', 'ENNEMIE'], y: 1400 },
+  s3: { T: 217.6, on: 'aya', title: ['SON PÈRE', 'A DISPARU…'], y: 330, note: 210.9 },
+};
+function thumbTitle(c, lines, y0) {
+  const top = y0 - 150, bot = y0 + lines.length * 150 + 20;
+  const g = c.createLinearGradient(0, top - 220, 0, bot + 220); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.3, 'rgba(0,0,0,.72)'); g.addColorStop(.7, 'rgba(0,0,0,.72)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g; c.fillRect(0, top - 220, OW, bot - top + 440);
+  lines.forEach((ln, i) => {
+    const y = y0 + i * 150, gt = c.createLinearGradient(0, -115, 0, 0); gt.addColorStop(0, '#fff1cf'); gt.addColorStop(.5, '#e7bd78'); gt.addColorStop(1, '#a8773d');
+    c.save(); c.font = '700 150px Oswald'; c.textAlign = 'center'; c.lineJoin = 'round'; if ('letterSpacing' in c) c.letterSpacing = '2px';
+    let w = c.measureText(ln).width, s = Math.min(1, 980 / w); c.translate(OW / 2, y); c.scale(s, s);
+    c.lineWidth = 18; c.strokeStyle = '#000'; c.strokeText(ln, 0, 0); c.shadowColor = 'rgba(255,190,100,.35)'; c.shadowBlur = 30; c.fillStyle = gt; c.fillText(ln, 0, 0); c.restore();
+  });
+}
+window.SH.thumb = function (id, q = .9) {
+  const o = THUMBS[id], c = SX; c.setTransform(1, 0, 0, 1, 0, 0);
+  for (const k in FOCUS) delete FOCUS[k]; renderAt(o.T);
+  const x = FOCUS[o.on] ? FOCUS[o.on].x : W / 2; compose(c, { x: clamp(x, CW / 2, W - CW / 2) });
+  if (o.note) {
+    // le mot, posé en bas de l'image
+    renderAt(o.note); c.save(); c.translate(OW / 2, 1500); c.rotate(-.035); c.shadowColor = 'rgba(0,0,0,.8)'; c.shadowBlur = 50;
+    const sx = (960 - 530) * SCALE, sy = (560 - 310) * SCALE, sw = 1060 * SCALE, sh = 620 * SCALE, dw = 960, dh = dw * sh / sw;
+    c.drawImage(cv, sx, sy, sw, sh, -dw / 2, -dh / 2, dw, dh); c.restore();
+  }
+  thumbTitle(c, o.title, o.y);
+  txt(c, 'AURUM', OW / 2, o.y < 900 ? 150 : 200, 44, { fill: '#e8dcc4', ls: 14, weight: 600, shadow: 'rgba(0,0,0,.9)', blur: 12 });
+  return SCV.toDataURL('image/jpeg', q);
+};
