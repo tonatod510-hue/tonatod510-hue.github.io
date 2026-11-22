@@ -473,8 +473,3 @@ function endCard(c, o) {
   txt(c, 'AURUM — ÉPISODE 2 : « N. »', 960, 640, 40, { fill: '#e8dcc4', ls: 8, weight: 600 });
   c.restore();
 }
-function creditsCard(c, o) {
-  c.fillStyle = '#050403'; c.fillRect(-M, -M, W + 2 * M, H + 2 * M);
-  const L = [['AURUM', 70, '#dcb172'], ['Saison 1 · Épisode 1 — « Le premier jour »', 34, '#e8dcc4'], ['', 30], ['Idée originale : David', 38, '#e8dcc4'], ['Animation, décors et montage : Claude', 30, '#bfae8f'], ['Voix : ElevenLabs — Morgane (Aya), Marine (Maman), Caro (Timi), Agathe (Nina), Shana (Victoria), Damien (M. Morel)', 24, '#bfae8f'], ['Musique originale et bruitages générés pour l’épisode', 24, '#bfae8f']];
-  let y = 380 - (o.scroll || 0); for (const [s, z, col] of L) { if (s) txt(c, s, 960, y, z, { fill: col || '#fff', weight: z > 40 ? 700 : 600, font: z > 40 ? 'Oswald' : 'Oswald' }); y += z * 1.9; }
-}

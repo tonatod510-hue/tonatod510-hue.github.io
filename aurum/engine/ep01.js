@@ -324,8 +324,6 @@ const SHOTS = [
     draw(c, S) { setBedroom(c, { T: S.T, time: 'night', lamp: true, clock: '21:48', curtain: 1, rooftop: 0 }); drawPerson(c, 'aya', { x: 1440, y: 1000, s: .95, T: S.T, e: ex(S.lt, [[0, 'worried'], [S.L('n10').t0, 'determined']]), armL: 'down', armR: 'pendant', pendant: true, turn: -.25, look: -.6 }); } },
   { name: 'À suivre', music: 'end', items: [['w', 4.6]],
     draw(c, S) { endCard(c, { T: S.T, k: clamp(S.lt / 2.4) }); } },
-  { name: 'Générique de fin', items: [['w', 7.0]], fadeOut: 1.0,
-    draw(c, S) { creditsCard(c, { T: S.T, scroll: S.lt * 10 }); } },
 ];
 
 // ---------- scènes partagées ----------

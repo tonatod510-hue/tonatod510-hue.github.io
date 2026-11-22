@@ -12,7 +12,7 @@ Les voix viennent d'ElevenLabs. La musique et les bruitages sont synthétisés e
 |---|---|
 | `core.js` | Base : rendu à n'importe quelle échelle, caméra, trames de points, chaleur qui ondule, textes. |
 | `people.js` | Personnages : corps, coiffures, tenues, **20 expressions**, gestes (bras en cinématique inverse), bouche animée par la voix, Nox « l'Éclipse » (masque noir cerclé d'or). |
-| `sets.js` | Décors : chambre, miroir, cuisine, entrée, rues d'Aurum, portail, cour, classe, cantine, mot, génériques. |
+| `sets.js` | Décors : chambre, miroir, cuisine, entrée, rues d'Aurum, portail, cour, classe, cantine, mot, titre et carton « À suivre ». |
 | `ep01.js` | **Le découpage** : 47 plans. Chaque plan liste ses répliques et ses pauses (ça fixe sa durée), sa caméra, ses personnages et leurs émotions au fil du temps. |
 | `prep_vo.py` | Prépare les voix (silences, volume) et calcule l'animation de la bouche → `vo.js`. |
 | `audio.py` | Musique originale (12 ambiances), 45 bruitages, mixage avec la musique qui baisse sous les dialogues. |
