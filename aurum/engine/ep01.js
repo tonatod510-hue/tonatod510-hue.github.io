@@ -349,8 +349,16 @@ function classRows(c, S, o) {
     if (w === 'NOX') {
       if (o.nox && nx > 0) {
         const p = clamp((nx - 1.0) / 3.4);
-        if (p < 1) { const xx = lerp(195, 1100, p), yy = lerp(r.y + 260 * r.s - 140, r.y + 290 * r.s, p); drawNox(c, { x: xx, y: yy, s: lerp(.48, .6, p), T, walk: p > 0 && p < 1 ? T * 5 : null, turn: .3, alpha: smooth(.6, 1.1, nx) }); }
-        else drawNox(c, { x, y: r.y + 300 * r.s - 4, s: .6, T, noLegs: true, turn: o.ayaLook ? .35 : 0, glow: o.glow || 1 });
+        const seatY = r.y + 320 * r.s - 6;
+        if (p < 1) {
+          // il descend l'allée de gauche depuis la porte, puis longe le premier rang jusqu'à sa place, et s'assoit
+          let xx, yy, ss, tn;
+          if (p < .45) { const q = ease(p / .45); xx = lerp(195, 215, q); yy = lerp(645, 1010, q); ss = lerp(.5, .74, q); tn = .08; }
+          else if (p < .92) { const q = ease((p - .45) / .47); xx = lerp(215, x, q); yy = lerp(1010, seatY + 50, q); ss = lerp(.74, r.s, q); tn = .38; }
+          else { const q = ease((p - .92) / .08); xx = x; yy = lerp(seatY + 50, seatY, q); ss = r.s; tn = .38 * (1 - q); }
+          drawNox(c, { x: xx, y: yy, s: ss, T, walk: p > 0 && p < .92 ? T * 5.5 : null, turn: tn, alpha: smooth(.6, 1.1, nx) });
+        }
+        else drawNox(c, { x, y: seatY, s: r.s, T, noLegs: true, turn: o.ayaLook ? .35 : 0, glow: o.glow || 1, armL: 'cross', armR: 'cross' });
       }
       desk(c, x, r.y, deskW, r.s); continue;
     }

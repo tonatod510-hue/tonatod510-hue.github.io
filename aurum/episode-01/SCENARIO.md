@@ -16,7 +16,7 @@
 | **Nina** (future meilleure amie) | 16 | Tresses avec perles dorées, casque audio autour du cou. | Bavarde, solaire, sait tout sur tout le monde. | Agathe |
 | **Victoria** (la reine du lycée) | 17 | Queue de cheval haute, boucles d'oreilles dorées, regard froid. | Méprisante… parce qu'elle a peur de quelque chose ? | Shana |
 | **M. Morel** (prof d'histoire) | 55 | Grand, lunettes, barbe grise, gilet. | Sévère mais juste. Semble en savoir plus qu'il ne le dit. | Damien |
-| **Nox** | ? | Le garçon à capuche sans visage, fente dorée lumineuse à la place des yeux. | Ne parle jamais. Arrivé il y a 3 ans, la nuit de la **Grande Panne**. | — (silencieux) |
+| **Nox** | ? | « L'Éclipse » : un masque noir lisse qui couvre tout le visage, cerclé d'un anneau d'or lumineux comme une éclipse de soleil, deux fines fentes dorées pour les yeux et une petite fêlure dorée en haut à droite. Cheveux blanc cendré en bataille, long manteau sombre à col montant, épingle en forme d'éclipse, mains dans les poches. | Ne parle jamais. Arrivé il y a 3 ans, la nuit de la **Grande Panne**. | — (silencieux) |
 
 **Les mystères de la saison :** où est le père d'Aya ? Qu'est-ce que la Grande Panne ? Qui est Nox ? Qui a écrit le mot signé « N. » ?
 
@@ -77,7 +77,7 @@
 - La porte se ferme. Aya sourit malgré elle.
 
 ### ACTE 2 — Le trajet
-**5. Rues d'Aurum.** Elle marche dans la ville : arches dorées, marché qui ouvre, tramway, chaleur. Elle serre les bretelles de son sac. Sur un mur, un graffiti doré : une capuche avec une fente lumineuse.
+**5. Rues d'Aurum.** Elle marche dans la ville : arches dorées, marché qui ouvre, tramway, chaleur. Elle serre les bretelles de son sac. Sur un mur, un graffiti doré : un masque noir cerclé d'or, deux fentes lumineuses — une éclipse.
 - **AYA (narration) :** « Aurum, c'est une ville étrange. Tout brille… mais tout le monde a l'air de cacher quelque chose. »
 
 **6. Le portail du lycée.** Immense grille dorée « LYCÉE D'AURUM », foule d'élèves en uniforme. Aya s'arrête net. Elle touche son pendentif, respire, et entre.
@@ -103,7 +103,7 @@
 - **M. MOREL :** « Merci, Aya. Installez-vous près de la fenêtre. La place est libre. »
 - Elle s'assoit. La chaise à côté d'elle est vide. La porte s'ouvre : **Nox** entre. Silence total. Il traverse la classe et s'assoit… à côté d'elle.
 - **M. MOREL** *(soupire)* **:** « En retard, Nox. Encore. »
-- Aya le regarde. La fente dorée brille doucement.
+- Aya le regarde. L'anneau d'or autour de son masque brille doucement.
 - **AYA (narration) :** « Personne ne m'avait parlé de lui. »
 
 ### ACTE 4 — La pause de midi
@@ -120,7 +120,7 @@
 - **AYA (narration) :** « Ce soir-là, j'ai trouvé un mot dans mon sac. »
 - Gros plan sur le mot, avec le même soleil que son pendentif :
 - **AYA** *(chuchote)* **:** « Ton père n'est pas parti. Ne fais confiance à personne. » — signé « N. »
-- Elle court à la fenêtre. Sur le toit d'en face, la silhouette de **Nox**, sa fente dorée qui brille dans la nuit. Puis plus rien.
+- Elle court à la fenêtre. Sur le toit d'en face, la silhouette de **Nox**, l'anneau d'or de son masque qui brille dans la nuit, comme une éclipse. Puis plus rien.
 - **AYA (narration) :** « Je pensais que le plus dur, ce serait le premier jour. » … « Je me trompais. »
 - Noir. « À SUIVRE ».
 

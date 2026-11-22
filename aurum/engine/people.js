@@ -61,6 +61,7 @@ function armPreset(name, side, sw, T, ph = 0) {
     case 'shoulder': return { tx: side * -70, ty: -505, b: -side };
     case 'face': return { tx: side * 18, ty: -600, b: -side };
     case 'thumb': return { tx: side * (sw + 40), ty: -560, b: side };
+    case 'pocket': return { tx: side * 74, ty: -292, b: -side, hand: 'hidden' };
   }
   return null;
 }
@@ -76,6 +77,7 @@ const CHARS = {
   mom: { name: 'Maman', skin: SKIN.mom, hair: { style: 'wrap', color: '#141414' }, top: { type: 'apron', color: '#2c2a2a', apron: '#c4bcab' }, bottom: { type: 'dress', color: '#2c2a2a' }, legs: '#1b1b1b', earrings: true, fem: 1, headS: 1, bodyS: 1.07, eye: .95, shoes: 'slipper' },
   timi: { name: 'Timi', skin: SKIN.timi, hair: { style: 'curly', color: '#151515' }, top: { type: 'tshirt', color: '#5e5c5a' }, bottom: { type: 'shorts', color: '#2a2a2e' }, legs: 'skin', fem: 0, headS: 1.12, bodyS: .62, eye: 1.15 },
   morel: { name: 'M. Morel', skin: SKIN.morel, hair: { style: 'gray', color: '#8d8a85' }, top: { type: 'vest', color: '#2a2622', shirt: '#d6d0c2' }, bottom: { type: 'pants', color: '#232326' }, legs: '#232326', glasses: true, beard: true, fem: 0, headS: 1.02, bodyS: 1.14, eye: .9, shoes: 'dark' },
+  nox: { name: 'Nox', skin: '#7f7c78', hair: { style: 'messy', color: '#d9d4c9' }, top: { type: 'coat', color: '#16161a', trim: '#c9a063' }, bottom: { type: 'pants', color: '#1f1f23' }, legs: '#1f1f23', fem: 0, headS: 1, bodyS: 1.08, eye: 1, shoes: 'dark', mask: true },
   dad: { name: 'Papa', skin: '#7a7672', hair: { style: 'short', color: '#141414' }, top: { type: 'vest', color: '#3a3430', shirt: '#cfc8b8' }, bottom: { type: 'pants', color: '#232326' }, legs: '#232326', beard: false, fem: 0, headS: 1, bodyS: 1.1, eye: .95, shoes: 'dark' },
   st1: { skin: '#7c7975', hair: { style: 'short', color: '#151515' }, top: UNIFORM.top, bottom: { type: 'pants', color: '#26262a' }, legs: '#26262a', fem: 0, headS: 1, bodyS: 1.05, eye: .95 },
   st2: { skin: '#9a9792', hair: { style: 'bob', color: '#1c1c1c' }, ...UNIFORM, fem: 1, headS: 1, bodyS: .98, eye: 1 },
@@ -111,11 +113,11 @@ function drawLegs(c, ch, lL, lR, sitHide) {
 }
 function torsoPath(ch) {
   const t = ch.top.type, p = new Path2D();
-  const sw = 78, hw = ch.top.type === 'apron' || ch.top.type === 'vest' ? 82 : 72;
-  const bot = t === 'apron' ? -205 : t === 'tshirt' ? -300 : t === 'pajama' ? -320 : -318;
+  const sw = 78, hw = ch.top.type === 'apron' || ch.top.type === 'vest' ? 82 : t === 'coat' ? 86 : 72;
+  const bot = t === 'apron' ? -205 : t === 'coat' ? -178 : t === 'tshirt' ? -300 : t === 'pajama' ? -320 : -318;
   p.moveTo(-sw + 14, -522); p.quadraticCurveTo(-sw - 6, -518, -sw - 4, -490);
-  p.lineTo(-hw - (t === 'apron' ? 18 : 0), bot + 12); p.quadraticCurveTo(-hw - 2, bot, -hw + 10, bot);
-  p.lineTo(hw - 10, bot); p.quadraticCurveTo(hw + 2, bot, hw + (t === 'apron' ? 18 : 0), bot + 12);
+  p.lineTo(-hw - (t === 'apron' ? 18 : t === 'coat' ? 22 : 0), bot + 12); p.quadraticCurveTo(-hw - 2, bot, -hw + 10, bot);
+  p.lineTo(hw - 10, bot); p.quadraticCurveTo(hw + 2, bot, hw + (t === 'apron' ? 18 : t === 'coat' ? 22 : 0), bot + 12);
   p.lineTo(sw + 4, -490); p.quadraticCurveTo(sw + 6, -518, sw - 14, -522); p.closePath();
   return { p, bot, sw, hw };
 }
@@ -164,6 +166,18 @@ function drawTorso(c, ch, o) {
     const ti = new Path2D(); ti.moveTo(-7, -508); ti.lineTo(7, -508); ti.lineTo(10, -455); ti.lineTo(0, -444); ti.lineTo(-10, -455); ti.closePath(); paint(c, ti, { fill: '#b08a52', stroke: '#000', lw: 1.8 });
     c.fillStyle = '#c9a063'; for (const y of [-430, -395, -360]) { c.beginPath(); c.arc(0, y, 4.5, 0, TAU); c.fill(); }
     c.strokeStyle = '#000'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(0, -440); c.lineTo(0, bot); c.stroke();
+  } else if (t === 'coat') {
+    // long manteau à col montant, ouvert sur l'uniforme, épingle « éclipse »
+    const inner = new Path2D(); inner.moveTo(-26, -520); inner.lineTo(26, -520); inner.lineTo(14, bot); inner.lineTo(-14, bot); inner.closePath(); paint(c, inner, { fill: '#26262b', stroke: '#000', lw: 2 });
+    const ti = new Path2D(); ti.moveTo(-6, -508); ti.lineTo(6, -508); ti.lineTo(9, -462); ti.lineTo(0, -452); ti.lineTo(-9, -462); ti.closePath(); paint(c, ti, { fill: '#c9a063', stroke: '#000', lw: 1.8 });
+    for (const sd of [-1, 1]) {
+      const lap = new Path2D(); lap.moveTo(sd * 26, -540); lap.lineTo(sd * 46, -560); lap.lineTo(sd * 60, -512); lap.lineTo(sd * 30, -430); lap.lineTo(sd * 18, bot + 4); lap.lineTo(sd * 12, -520); lap.closePath();
+      paint(c, lap, { fill: '#1c1c21', rim: sd < 0 ? '#bdb8ae' : null, rx: 3, stroke: '#000', lw: 2.6 });
+    }
+    c.strokeStyle = ch.top.trim; c.lineWidth = 2.4; c.beginPath(); c.moveTo(-46, -560); c.lineTo(-60, -512); c.moveTo(46, -560); c.lineTo(60, -512); c.stroke();
+    c.fillStyle = '#c9a063'; for (const y of [-400, -340, -280]) { c.beginPath(); c.arc(30, y, 4.2, 0, TAU); c.fill(); }
+    c.strokeStyle = 'rgba(0,0,0,.7)'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(-84, -300); c.lineTo(-44, -296); c.moveTo(84, -300); c.lineTo(44, -296); c.stroke();
+    c.save(); c.translate(-42, -470); c.shadowColor = 'rgba(255,190,100,.8)'; c.shadowBlur = 10; c.strokeStyle = '#e2bd79'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, 10, 0, TAU); c.stroke(); c.shadowBlur = 0; c.fillStyle = '#0a0a0c'; c.beginPath(); c.arc(1.5, 0, 8, 0, TAU); c.fill(); c.restore();
   } else if (t === 'pajama') {
     const nk = new Path2D(); nk.moveTo(-28, -522); nk.quadraticCurveTo(0, -492, 28, -522); paint(c, nk, { fill: ch.skin, stroke: '#000', lw: 2 });
     c.fillStyle = '#c9a063'; for (let k = 0; k < 7; k++) { const x = -50 + (k % 4) * 32 + (k > 3 ? 16 : 0), y = -470 + Math.floor(k / 4) * 70; c.beginPath(); c.arc(x, y, 4, 0, TAU); c.fill(); }
@@ -182,6 +196,7 @@ function drawTorso(c, ch, o) {
   }
 }
 function drawHand(c, ch, side, kind) {
+  if (kind === 'hidden') return;
   const sz = ch.bodyS < .8 ? 1.15 : 1;
   c.save(); c.scale(sz, sz);
   const p = new Path2D(); p.ellipse(0, 12, 13, 17, 0, 0, TAU);
@@ -349,6 +364,13 @@ function hairFront(c, ch, o, hy) {
   } else if (h.style === 'bob') {
     const cap = new Path2D(); cap.moveTo(-rx - 8, hy + 50); cap.bezierCurveTo(-rx - 14, hy - ry - 26, rx + 14, hy - ry - 26, rx + 8, hy + 50); cap.lineTo(rx - 8, hy + 50); cap.quadraticCurveTo(rx - 6, hy - 40, 0, hy - 44); cap.quadraticCurveTo(-rx + 6, hy - 40, -rx + 8, hy + 50); cap.closePath();
     paint(c, cap, { fill: col, rim: '#555', rx: 3, stroke: '#000', lw: 2.6 });
+  } else if (h.style === 'messy') {
+    const cap = new Path2D(); cap.moveTo(-rx - 6, hy - 2);
+    const spikes = [[-rx - 14, hy - 40], [-rx + 2, hy - 62], [-rx - 6, hy - ry - 6], [-24, hy - ry - 4], [-30, hy - ry - 30], [-4, hy - ry - 10], [8, hy - ry - 38], [22, hy - ry - 8], [44, hy - ry - 24], [rx - 2, hy - ry + 6], [rx + 16, hy - 46], [rx + 2, hy - 30], [rx + 10, hy - 6]];
+    for (const [x, y] of spikes) cap.lineTo(x, y);
+    cap.lineTo(rx - 6, hy - 30); cap.lineTo(rx - 22, hy - 42); cap.lineTo(14, hy - 34); cap.lineTo(-6, hy - 50); cap.lineTo(-22, hy - 30); cap.lineTo(-rx + 12, hy - 40); cap.lineTo(-rx + 2, hy - 14); cap.closePath();
+    paint(c, cap, { fill: col, rim: '#fbf7ee', rx: 3, dots: PAT.dark2, dx: 10, da: .35, stroke: '#000', lw: 2.6 });
+    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2; for (const [x0, y0, x1, y1] of [[-30, hy - 62, -14, hy - 40], [10, hy - 70, 4, hy - 46], [34, hy - 60, 26, hy - 40]]) { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
   } else if (h.style === 'puff') {
     const p = new Path2D(); p.arc(0, hy - ry - 26, 46, 0, TAU); paint(c, p, { fill: col, stroke: '#000', lw: 2.6 });
     const cap = new Path2D(); cap.moveTo(-rx - 2, hy - 10); cap.bezierCurveTo(-rx - 4, hy - ry - 18, rx + 4, hy - ry - 18, rx + 2, hy - 10); cap.quadraticCurveTo(0, hy - 50, -rx - 2, hy - 10); cap.closePath();
@@ -365,7 +387,7 @@ function drawHead(c, ch, o, e) {
   const nk = rect(-15, hy + ry - 14, 30, 56); paint(c, nk, { fill: ch.skin, dots: PAT.skin, dx: 2, da: .9, stroke: '#000', lw: 2.4 });
   c.save(); const pv = hy + ry; c.translate(0, pv); c.rotate(o.tilt || 0); c.translate(0, -pv);
   if (!o.back) {
-    if (ch.hair.style === 'short' || ch.hair.style === 'curly' || ch.hair.style === 'gray') for (const sd of [-1, 1]) { const ear = new Path2D(); ear.ellipse(sd * (rx - 2), hy + 6, 9, 13, 0, 0, TAU); paint(c, ear, { fill: ch.skin, stroke: '#000', lw: 2.2 }); }
+    if (ch.hair.style === 'short' || ch.hair.style === 'curly' || ch.hair.style === 'gray' || ch.hair.style === 'messy') for (const sd of [-1, 1]) { const ear = new Path2D(); ear.ellipse(sd * (rx - 2), hy + 6, 9, 13, 0, 0, TAU); paint(c, ear, { fill: ch.skin, stroke: '#000', lw: 2.2 }); }
     const head = new Path2D(); head.ellipse(0, hy, rx, ry, 0, 0, TAU);
     paint(c, head, { fill: ch.skin, rim: '#cfcbc4', rx: 3, dots: PAT.skin, dx: 16, da: .9, stroke: '#000', lw: 2.8 });
     if (ch.beard) {
@@ -373,7 +395,7 @@ function drawHead(c, ch, o, e) {
       b.quadraticCurveTo(rx - 14, hy + 30, 18, hy + 34); b.quadraticCurveTo(0, hy + 26, -18, hy + 34); b.quadraticCurveTo(-rx + 14, hy + 30, -rx + 2, hy + 4); b.closePath();
       paint(c, b, { fill: '#8d8a85', dots: PAT.dark2, dx: 0, da: .4, stroke: '#000', lw: 2.4 });
     }
-    drawFace(c, ch, o, e, hy);
+    if (ch.mask) drawMask(c, ch, o, hy, rx, ry); else drawFace(c, ch, o, e, hy);
   }
   hairFront(c, ch, o, hy);
   c.restore();
@@ -417,42 +439,29 @@ function drawPerson(c, chId, o) {
   return { lh: w(hL), rh: w(hR), head: { x: o.x, y: o.y + (-622 * (hs / bs) + (SH_Y - 20) * (1 - hs / bs)) * k } };
 }
 
-// ---------- Nox (capuche sans visage, fente dorée) ----------
-function noxSlit(c, x, y, s, g, T) {
-  const h = 15 * s * blinkAt(T, 9.1); if (h < .6) return;
-  c.save(); c.shadowColor = `rgba(255,190,100,${Math.min(1, .85 * g)})`; c.shadowBlur = 36 * s * g;
-  const gr = c.createLinearGradient(0, y - h / 2, 0, y + h / 2); gr.addColorStop(0, '#fff2cc'); gr.addColorStop(1, '#d39b52');
-  c.fillStyle = gr; const p = rect(x - 52 * s, y - h / 2, 104 * s, h, h / 2); c.fill(p); c.shadowBlur = 12 * s * g; c.fill(p); c.restore();
+// ---------- Nox « l'Éclipse » : masque noir cerclé d'or, cheveux cendrés, long manteau ----------
+function drawMask(c, ch, o, hy, rx, ry) {
+  const T = o.T || 0, g = o.glow ?? 1, turn = o.turn || 0, fx = turn * 12;
+  const m = new Path2D(); m.ellipse(fx * .3, hy + 2, rx - 2, ry - 1, 0, 0, TAU);
+  // couronne dorée (éclipse)
+  c.save(); c.shadowColor = `rgba(255,196,110,${Math.min(1, .9 * g)})`; c.shadowBlur = 26 * g; c.strokeStyle = '#f0c983'; c.lineWidth = 5; c.stroke(m); c.restore();
+  const gr = c.createRadialGradient(fx - 12, hy - 20, 4, fx * .3, hy, ry); gr.addColorStop(0, '#2a2a30'); gr.addColorStop(1, '#070709');
+  c.fillStyle = gr; c.fill(m);
+  c.save(); c.clip(m); c.strokeStyle = 'rgba(255,255,255,.08)'; c.lineWidth = 6; c.beginPath(); c.arc(fx - 6, hy - 6, ry * .78, PI * 1.05, PI * 1.45); c.stroke(); c.restore();
+  c.strokeStyle = '#000'; c.lineWidth = 2.4; c.stroke(m);
+  // fentes des yeux (lueur dorée discrète)
+  const op = blinkAt(T, 9.1);
+  for (const sd of [-1, 1]) {
+    const ex = fx + sd * 20, ey = hy - 4;
+    c.save(); c.translate(ex, ey); c.rotate(sd * .12); c.scale(1, op);
+    c.shadowColor = `rgba(255,200,120,${.9 * g})`; c.shadowBlur = 14 * g;
+    c.fillStyle = '#f6d9a0'; c.beginPath(); c.moveTo(-14, 0); c.quadraticCurveTo(0, -5.5, 14, 0); c.quadraticCurveTo(0, 3.2, -14, 0); c.fill();
+    c.restore();
+  }
+  // fine fêlure dorée sur le masque (indice pour la suite)
+  c.strokeStyle = 'rgba(226,189,121,.75)'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(fx + 24, hy - ry + 10); c.lineTo(fx + 16, hy - 30); c.lineTo(fx + 26, hy - 18); c.stroke();
 }
 function drawNox(c, o) {
-  const s = o.s || 1, T = o.T || 0;
-  c.save(); c.translate(o.x, o.y); c.scale(s, s); if (o.alpha != null) c.globalAlpha *= o.alpha;
-  let by = Math.sin(T * 1.4) * 1.5;
-  if (!o.noShadow) { c.fillStyle = 'rgba(0,0,0,.5)'; c.beginPath(); c.ellipse(0, 2, 190, 22, 0, 0, TAU); c.fill(); }
-  let lL = 0, lR = 0; if (o.walk != null) { lL = Math.max(0, Math.sin(o.walk)) * 20; lR = Math.max(0, -Math.sin(o.walk)) * 20; by -= Math.abs(Math.sin(o.walk)) * 8; }
-  if (!o.noLegs) for (const side of [-1, 1]) {
-    c.save(); c.translate(0, -(side < 0 ? lL : lR)); const x0 = side < 0 ? -84 : 8;
-    paint(c, rect(x0, -222, 76, 186, [6, 6, 10, 10]), { fill: '#151515', rim: side < 0 ? '#cfcac0' : null, rx: 4, dots: PAT.light, dx: side < 0 ? -40 : 46, stroke: '#000', lw: 3 });
-    const sx = side < 0 ? -114 : 12; const sh = rect(sx, -54, 102, 54, [28, 28, 10, 10]); paint(c, sh, { fill: '#e9e7e2', stroke: '#000', lw: 3 });
-    c.fillStyle = '#c29b5f'; c.fillRect(sx + 3, -11, 96, 8); c.strokeStyle = '#000'; c.lineWidth = 3; c.stroke(sh); c.restore();
-  }
-  c.translate(0, by);
-  const t = new Path2D(); t.moveTo(-108, -448); t.lineTo(108, -448); t.quadraticCurveTo(160, -442, 163, -392); t.lineTo(167, -232); t.quadraticCurveTo(167, -190, 130, -188); t.lineTo(-130, -188); t.quadraticCurveTo(-167, -190, -167, -232); t.lineTo(-163, -392); t.quadraticCurveTo(-160, -442, -108, -448); t.closePath();
-  paint(c, t, { fill: '#171717', rim: '#dcd8cf', rx: 6, dots: PAT.light, dx: 22, stroke: '#000', lw: 3.5 });
-  c.save(); c.clip(t); for (const yy of [-398, -352, -306, -262, -222]) { c.strokeStyle = 'rgba(255,255,255,.06)'; c.lineWidth = 3; c.beginPath(); c.moveTo(-170, yy - 13); c.quadraticCurveTo(0, yy - 3, 170, yy - 13); c.stroke(); c.strokeStyle = '#040404'; c.lineWidth = 4; c.beginPath(); c.moveTo(-170, yy); c.quadraticCurveTo(0, yy + 10, 170, yy); c.stroke(); } c.restore();
-  c.fillStyle = '#e8e6e0'; for (let k = 0; k <= 16; k++) { const u = k / 16; c.beginPath(); c.arc(lerp(-58, 58, u), -414 + Math.sin(u * PI) * 26, 2.6, 0, TAU); c.fill(); }
-  for (const side of [-1, 1]) {
-    const pose = side < 0 ? o.armL : o.armR; const { th1, th2 } = solveArm(side * 138, -404, side, pose, 118, 134);
-    c.save(); c.translate(side * 138, -404); c.rotate(-th1);
-    paint(c, rect(-36, -21, 72, 118 + 40, 30), { fill: '#171717', rim: '#d9d5cc', rx: 5, dots: PAT.light, dx: 6, stroke: '#000', lw: 3.2 });
-    c.translate(0, 118); c.rotate(-(th2 - th1)); paint(c, rect(-34, -20, 68, 100 + 38, 28), { fill: '#171717', rim: '#d9d5cc', rx: 5, dots: PAT.light, dx: 6, stroke: '#000', lw: 3.2 });
-    c.translate(0, 102); paint(c, rect(-28, -4, 56, 62, [12, 12, 24, 24]), { fill: '#141414', rim: '#8f8a82', rx: 3, stroke: '#000', lw: 3 }); c.restore();
-  }
-  c.fillStyle = '#0b0b0b'; c.beginPath(); c.ellipse(0, -438, 112, 30, 0, 0, TAU); c.fill();
-  const hy = -540; const hood = new Path2D(); hood.ellipse(0, hy, 127, 125, 0, 0, TAU);
-  paint(c, hood, { fill: '#1a1a1a', rim: '#e2ded5', rx: 7, dots: PAT.light, dx: 22, stroke: '#000', lw: 3.5 });
-  const face = new Path2D(); face.ellipse((o.turn || 0) * 18, hy + 20, 84, 92, 0, 0, TAU); c.lineWidth = 14; c.strokeStyle = '#242424'; c.stroke(face); c.fillStyle = '#030303'; c.fill(face);
-  noxSlit(c, (o.turn || 0) * 22, hy + 2, 1, o.glow ?? 1, T);
-  c.restore();
-  return { slit: { x: o.x + (o.turn || 0) * 22 * s, y: o.y + (hy + 2 + by) * s } };
+  const r = drawPerson(c, 'nox', { x: o.x, y: o.y, s: o.s || 1, T: o.T || 0, turn: o.turn || 0, walk: o.walk, noLegs: o.noLegs, alpha: o.alpha, noShadow: o.noShadow, glow: o.glow ?? 1, back: o.back, seed: 9, armL: o.armL ?? 'pocket', armR: o.armR ?? 'pocket' });
+  return { slit: r.head, head: r.head };
 }

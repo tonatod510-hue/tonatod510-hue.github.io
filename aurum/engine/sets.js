@@ -89,7 +89,7 @@ function setBedroom(c, o) {
   if (o.rooftop != null) {
     c.fillStyle = '#0a0a0c'; c.fillRect(wx - 20, wy + wh - 150, ww + 40, 200);
     c.fillStyle = '#141418'; c.fillRect(wx + 300, wy + wh - 210, 160, 70);
-    if (o.rooftop > 0) { c.save(); c.globalAlpha = o.rooftop; drawNox(c, { x: wx + 410, y: wy + wh - 150, s: .27, T, noShadow: true, glow: 1.8 }); c.restore(); }
+    if (o.rooftop > 0) { c.save(); c.globalAlpha = o.rooftop; drawNox(c, { x: wx + 410, y: wy + wh - 150, s: .2, T, noShadow: true, glow: 2.2 }); c.restore(); }
   }
   c.restore();
   // cadre fenêtre + croisillons
@@ -274,8 +274,15 @@ function setStreet(c, o) {
     if (hash(k * 5.5) > .4) { const aw = new Path2D(); aw.moveTo(x + 20, fl - 260); aw.lineTo(x + 390, fl - 260); aw.lineTo(x + 410, fl - 180); aw.lineTo(x, fl - 180); aw.closePath(); paint(c, aw, { fill: k % 3 ? '#8a6a3d' : '#3e3020', stroke: '#140d06', lw: 3 }); c.fillStyle = 'rgba(255,240,200,.35)'; for (let s = 0; s < 8; s++) c.fillRect(x + 20 + s * 48, fl - 258, 22, 76);
       // étal du marché
       const st = rect(x + 60, fl - 140, 290, 70, 4); paint(c, st, { fill: '#5a4122', stroke: '#140d06', lw: 3 }); for (let s = 0; s < 9; s++) { c.fillStyle = ['#e2c08a', '#c9a063', '#8a6a3d'][s % 3]; c.beginPath(); c.arc(x + 85 + s * 30, fl - 146, 14, 0, TAU); c.fill(); c.strokeStyle = '#140d06'; c.lineWidth = 2; c.stroke(); } }
-    // graffiti (capuche à la fente)
-    if (k === 5) { c.save(); c.translate(x + 300, top + 330); c.globalAlpha = .85; c.fillStyle = '#141414'; c.beginPath(); c.ellipse(0, 0, 60, 58, 0, 0, TAU); c.fill(); c.fillStyle = '#050505'; c.beginPath(); c.ellipse(0, 8, 40, 44, 0, 0, TAU); c.fill(); c.shadowColor = 'rgba(255,190,100,.9)'; c.shadowBlur = 16; c.fillStyle = '#f0c27a'; c.fillRect(-26, -2, 52, 8); c.restore(); }
+    // graffiti (masque-éclipse)
+    if (k === 5) { // graffiti : le masque-éclipse de Nox (anneau d'or, deux fentes)
+      c.save(); c.translate(x + 300, top + 330); c.globalAlpha = .9;
+      c.shadowColor = 'rgba(255,190,100,.9)'; c.shadowBlur = 22; c.strokeStyle = '#f0c983'; c.lineWidth = 9; c.beginPath(); c.ellipse(0, 0, 54, 62, 0, 0, TAU); c.stroke(); c.shadowBlur = 0;
+      c.fillStyle = '#070709'; c.beginPath(); c.ellipse(0, 0, 50, 58, 0, 0, TAU); c.fill();
+      c.fillStyle = 'rgba(240,201,131,.55)'; for (const [dx, h] of [[-30, 34], [6, 52], [34, 26]]) c.fillRect(dx, 58, 3.5, h);
+      c.shadowColor = 'rgba(255,200,120,.9)'; c.shadowBlur = 12; c.fillStyle = '#f6d9a0';
+      for (const sd of [-1, 1]) { c.save(); c.translate(sd * 20, -6); c.rotate(sd * .12); c.beginPath(); c.moveTo(-15, 0); c.quadraticCurveTo(0, -6, 15, 0); c.quadraticCurveTo(0, 3.5, -15, 0); c.fill(); c.restore(); }
+      c.restore(); }
     // lampadaire
     const lx = x + 405; c.fillStyle = '#140d06'; c.fillRect(lx - 5, fl - 420, 10, 420); c.beginPath(); c.arc(lx, fl - 430, 16, 0, TAU); c.fill(); glow(c, lx, fl - 430, 60, 'rgba(255,210,140,A)', .5);
   }
