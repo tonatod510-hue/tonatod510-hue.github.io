@@ -207,6 +207,7 @@ function setKitchen(c, o) {
 }
 function steam(c, x, y, T, n, a) { c.lineWidth = 4; c.lineCap = 'round'; for (let i = 0; i < n; i++) { const ph = (T * .45 + i / n) % 1; c.strokeStyle = `rgba(240,230,210,${a * .35 * Math.sin(PI * ph)})`; c.beginPath(); for (let j = 0; j <= 10; j++) { const px = x + (i - n / 2) * 14 + Math.sin(j * .7 + T * 3 + i) * 8, py = y - ph * 120 - j * 8; j ? c.lineTo(px, py) : c.moveTo(px, py); } c.stroke(); } }
 function familyPhoto(c, x, y, s, T, glint = 0) {
+  focusMark(c, 'photo', x, y, s); FOCUS_OFF++; // les personnages de la photo ne comptent pas pour le cadrage
   c.save(); c.translate(x, y); c.scale(s, s);
   frameGold(c, -130, -100, 260, 190, (x2) => {
     x2.fillStyle = vGrad(x2, -100, 90, [[0, '#5a4630'], [1, '#2a1f14']]); x2.fillRect(-130, -100, 260, 190);
@@ -219,7 +220,7 @@ function familyPhoto(c, x, y, s, T, glint = 0) {
     if (glint) { x2.fillStyle = `rgba(255,255,255,${.25 * glint})`; x2.fillRect(-130, -100, 260, 190); }
   });
   const st = new Path2D(); st.moveTo(-30, 106); st.lineTo(30, 106); st.lineTo(60, 160); st.lineTo(-60, 160); st.closePath(); paint(c, st, { fill: '#6d5331', stroke: '#0c0804', lw: 3 });
-  c.restore();
+  c.restore(); FOCUS_OFF--;
 }
 // table vue de face (cache le bas des personnages assis)
 function kitchenTable(c, x, y, w, T, bowls = true) {

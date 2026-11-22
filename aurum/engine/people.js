@@ -401,6 +401,16 @@ function drawHead(c, ch, o, e) {
   c.restore();
 }
 
+// ---------- repères à l'écran (pour recadrer automatiquement, ex. Shorts verticaux) ----------
+// FOCUS[id] = position à l'écran (unités 1920×1080) de la tête du personnage le plus grand dessiné sous ce nom.
+var FOCUS = {}, FOCUS_OFF = 0;
+function focusMark(c, id, x, y, sc) {
+  if (FOCUS_OFF > 0) return;
+  const m = c.getTransform(), k = Math.hypot(m.a, m.b) / SCALE * (sc || 1);
+  const px = (m.a * x + m.c * y + m.e) / SCALE, py = (m.b * x + m.d * y + m.f) / SCALE, f = FOCUS[id];
+  if (!f || k >= f.k) FOCUS[id] = { x: px, y: py, k };
+}
+
 // ---------- personnage complet ----------
 // o : {x,y,s,turn,look,lookY,expr|e,talk,tilt,lean,slump,walk,armL,armR,alpha,back,pendant,tears,seed,T}
 function drawPerson(c, chId, o) {
@@ -436,7 +446,9 @@ function drawPerson(c, chId, o) {
   if (frontArms) { hL = drawArmPart(c, ch, -1, toLocal(armA), T); hR = drawArmPart(c, ch, 1, toLocal(armB), T); }
   c.restore(); c.restore();
   const k = s * bs, w = p => ({ x: o.x + p.x * k * (o.flip ? -1 : 1), y: o.y + (p.y + bob / bs) * k });
-  return { lh: w(hL), rh: w(hR), head: { x: o.x, y: o.y + (-622 * (hs / bs) + (SH_Y - 20) * (1 - hs / bs)) * k } };
+  const head = { x: o.x, y: o.y + (-622 * (hs / bs) + (SH_Y - 20) * (1 - hs / bs)) * k };
+  if (o.alpha == null || o.alpha > .3) focusMark(c, typeof chId === 'string' ? chId : (ch.name || '?'), head.x, head.y, k);
+  return { lh: w(hL), rh: w(hR), head };
 }
 
 // ---------- Nox « l'Éclipse » : masque noir cerclé d'or, cheveux cendrés, long manteau ----------

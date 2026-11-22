@@ -19,6 +19,7 @@ Les voix viennent d'ElevenLabs. La musique et les bruitages sont synthétisés e
 | `make_subs.py` | Sous-titres `.srt` et `.ass` à partir de la timeline. |
 | `render_ep.js` | Rendu image par image (Playwright + ffmpeg). |
 | `build.py` | Assemble une page HTML autonome à partir des fichiers ci-dessus. |
+| `shorts.js` + `render_short.js` | **Shorts verticaux** 1080×1920 tirés de l'épisode : recadrage automatique sur le personnage qui parle, gros sous-titres, accroche, carte de fin. |
 
 ## Fabriquer l'épisode
 
@@ -29,6 +30,13 @@ node tools/probe.js ep01.html probe/ -                                # 2. timel
 python3 engine/audio.py probe/timeline.json voix_wav/ mix.wav        # 3. son
 node engine/render_ep.js ep01.html video.mp4 2 24 4                   # 4. image 4K
 ffmpeg -i video.mp4 -i mix.wav -c:v copy -c:a aac -af loudnorm=I=-16:TP=-1.5 episode.mp4   # 5. assemblage
+```
+
+Shorts (après l'étape 3) :
+
+```bash
+python3 engine/build.py shorts.html core.js,people.js,sets.js,vo.js,ep01.js,main.js,shorts.js polices/
+node engine/render_short.js shorts.html s1 short1.mp4 4   # s1, s2, s3 : voir SHORTS dans shorts.js
 ```
 
 Pour un nouvel épisode : écrire `ep02.js` sur le modèle de `ep01.js`. Les personnages et les décors se réutilisent tels quels.
