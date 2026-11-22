@@ -16,19 +16,19 @@ const SHORTS = {
   },
   // TikTok : l'épisode entier découpé en 3 parties (chacune > 1 min), différent des Shorts YouTube
   p1: {
-    title: ['PARTIE 1'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 1/3', hookFade: 4,
+    title: ['PARTIE 1'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 1/3', hookFade: 1.8,
     segs: [[0, 13.54], [20.04, 81.37]], // sans le générique
     focus: { 'La photo de famille': [[0, 'photo']], 'Miroir — essai 1': [[0, 1010]] },
     tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['PARTIE 2', 'ABONNE-TOI POUR LA SUITE'],
   },
   p2: {
-    title: ['PARTIE 2'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 2/3', hookFade: 4,
+    title: ['PARTIE 2'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 2/3', hookFade: 1.8,
     segs: [[81.37, 168.6]], // jusqu'à Nox dans l'encadrement de la porte
     focus: { 'Tous les regards': [[0, 'vic']], 'Réactions': [[0, 'vic'], [1.4, 'nina']], 'Nox entre': [[0, 'nox']] },
     tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['PARTIE 3', 'ABONNE-TOI POUR LA SUITE'],
   },
   p3: {
-    title: ['PARTIE 3'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 3/3', hookFade: 4,
+    title: ['PARTIE 3'], tag: 'AURUM  ·  ÉPISODE 1  ·  PARTIE 3/3', hookFade: 1.8,
     segs: [[164.13, 221.69]],
     focus: { 'Nox entre': [[0, 'nox']], "Personne ne m'avait parlé de lui": [[0, 'nox'], [2.3, 'aya']], 'Le mot': [[0, 'FIT']], 'À la fenêtre': [[0, 'aya'], [1.1, ['aya', 'nox']], [3.9, 'aya']] },
     tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['ÉPISODE 2 : « N. »', 'ABONNE-TOI POUR LA SUITE'], endF: 96, // carte de fin de 4 s : la partie dépasse bien 1 min
@@ -109,6 +109,15 @@ function caption(c, ch, T, y, cx = OW / 2 - 20) {
 }
 function hook(c, cfg, t = 0) {
   const big = cfg.hookFade ? 1 - smooth(cfg.hookFade, cfg.hookFade + .6, t) : 1;
+  if (cfg.hookFade) { // parties TikTok : tout le haut (bandeau + titre) disparaît après ~2 s
+    if (big <= 0) return;
+    c.save(); c.globalAlpha = big;
+    const g = c.createLinearGradient(0, 0, 0, 560); g.addColorStop(0, 'rgba(0,0,0,.82)'); g.addColorStop(.6, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, OW, 560);
+    txt(c, cfg.tag || 'AURUM  ·  ÉPISODE 1', OW / 2, cfg.tagY ?? 200, 30, { fill: '#e8dcc4', ls: 8, weight: 600 });
+    const gt = c.createLinearGradient(0, 240, 0, 420); gt.addColorStop(0, '#fbe6b8'); gt.addColorStop(.5, '#dcb172'); gt.addColorStop(1, '#a87a42');
+    cfg.title.forEach((ln, i) => txt(c, ln, OW / 2, (cfg.titleY ?? 310) + i * 96, 120, { fill: gt, ls: 3, shadow: 'rgba(0,0,0,.9)', blur: 18, sy: 4 }));
+    c.restore(); return;
+  }
   c.save(); c.globalAlpha = .45 + .55 * big;
   const g = c.createLinearGradient(0, 0, 0, 560); g.addColorStop(0, 'rgba(0,0,0,.82)'); g.addColorStop(.6, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)');
   c.fillStyle = g; c.fillRect(0, 0, OW, 560 * (.5 + .5 * big)); c.restore();
