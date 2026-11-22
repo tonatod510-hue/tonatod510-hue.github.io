@@ -7,6 +7,13 @@ const SHORTS = {
     segs: [[164.13, 198.49]],
     focus: { 'Nox entre': [[0, 'nox']], "Personne ne m'avait parlé de lui": [[0, 'nox'], [2.3, 'aya']] },
   },
+  // version TikTok du Short 1 : démarre sur la porte qui s'ouvre, fin « abonne-toi », textes hors des zones de l'interface TikTok
+  t1: {
+    title: ["PERSONNE N'A JAMAIS", 'VU SON VISAGE'],
+    segs: [[166.73, 198.49]],
+    focus: { 'Nox entre': [[0, 'nox']], "Personne ne m'avait parlé de lui": [[0, 'nox'], [2.3, 'aya']] },
+    tagY: 255, titleY: 360, capX: 500, endText: ['LA SUITE ?', 'ABONNE-TOI'],
+  },
   s2: {
     title: ['PREMIER JOUR,', 'PREMIÈRE ENNEMIE'],
     segs: [[98.52, 140.49]],
@@ -72,9 +79,9 @@ function chunks(cfg) {
   }
   return out;
 }
-function caption(c, ch, T, y) {
+function caption(c, ch, T, y, cx = OW / 2 - 20) {
   const k = clamp((T - ch.t0) / .09), s = .88 + .12 * ease(k);
-  c.save(); c.translate(OW / 2 - 20, y); c.scale(s, s);
+  c.save(); c.translate(cx, y); c.scale(s, s);
   c.font = '700 92px Oswald'; c.textAlign = 'center'; c.lineJoin = 'round'; if ('letterSpacing' in c) c.letterSpacing = '1px';
   let lines = [ch.text]; if (c.measureText(ch.text).width > 840) { const w = ch.text.split(' '); let best = 1, bd = 1e9; for (let i = 1; i < w.length; i++) { const d = Math.abs(w.slice(0, i).join(' ').length - w.slice(i).join(' ').length); if (d < bd) { bd = d; best = i; } } lines = [w.slice(0, best).join(' '), w.slice(best).join(' ')]; }
   lines.forEach((ln, i) => { const yy = (i - (lines.length - 1) / 2) * 104; c.lineWidth = 16; c.strokeStyle = 'rgba(0,0,0,.92)'; c.strokeText(ln, 0, yy); c.fillStyle = ch.nar ? '#f3cf8a' : '#ffffff'; c.fillText(ln, 0, yy); });
@@ -83,9 +90,9 @@ function caption(c, ch, T, y) {
 function hook(c, cfg) {
   const g = c.createLinearGradient(0, 0, 0, 560); g.addColorStop(0, 'rgba(0,0,0,.82)'); g.addColorStop(.6, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)');
   c.fillStyle = g; c.fillRect(0, 0, OW, 560);
-  txt(c, 'AURUM  ·  ÉPISODE 1', OW / 2, 200, 30, { fill: '#e8dcc4', ls: 8, weight: 600 });
+  txt(c, 'AURUM  ·  ÉPISODE 1', OW / 2, cfg.tagY ?? 200, 30, { fill: '#e8dcc4', ls: 8, weight: 600 });
   const gt = c.createLinearGradient(0, 240, 0, 420); gt.addColorStop(0, '#fbe6b8'); gt.addColorStop(.5, '#dcb172'); gt.addColorStop(1, '#a87a42');
-  cfg.title.forEach((ln, i) => txt(c, ln, OW / 2, 310 + i * 96, 88, { fill: gt, ls: 3, shadow: 'rgba(0,0,0,.9)', blur: 18, sy: 4 }));
+  cfg.title.forEach((ln, i) => txt(c, ln, OW / 2, (cfg.titleY ?? 310) + i * 96, 88, { fill: gt, ls: 3, shadow: 'rgba(0,0,0,.9)', blur: 18, sy: 4 }));
 }
 function eclipse(c, x, y, r, T) {
   c.save(); c.translate(x, y);
@@ -95,7 +102,7 @@ function eclipse(c, x, y, r, T) {
   for (const sd of [-1, 1]) { c.save(); c.translate(sd * r * .33, -r * .08); c.rotate(sd * .12); c.beginPath(); c.moveTo(-r * .25, 0); c.quadraticCurveTo(0, -r * .1, r * .25, 0); c.quadraticCurveTo(0, r * .06, -r * .25, 0); c.fill(); c.restore(); }
   c.restore();
 }
-function endShort(c, k, T) {
+function endShort(c, k, T, lines = ["L'ÉPISODE 1 EN ENTIER", 'SUR LA CHAÎNE']) {
   c.save(); c.globalAlpha = smooth(0, .25, k);
   c.fillStyle = '#050403'; c.fillRect(0, 0, OW, OH);
   const g = c.createRadialGradient(OW / 2, 820, 20, OW / 2, 820, 760); g.addColorStop(0, 'rgba(214,160,80,.32)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, OW, OH);
@@ -106,8 +113,7 @@ function endShort(c, k, T) {
   txt(c, 'AURUM', OW / 2, 1120, 150, { fill: gt, ls: 24, shadow: 'rgba(0,0,0,.85)', blur: 24, sy: 4 });
   c.restore();
   c.save(); c.globalAlpha = smooth(.4, .75, k);
-  txt(c, "L'ÉPISODE 1 EN ENTIER", OW / 2, 1250, 54, { fill: '#efe3cb', ls: 6, weight: 600 });
-  txt(c, 'SUR LA CHAÎNE', OW / 2, 1325, 54, { fill: '#efe3cb', ls: 6, weight: 600 });
+  lines.forEach((ln, i) => txt(c, ln, OW / 2, 1250 + i * 75, 54, { fill: '#efe3cb', ls: 6, weight: 600 }));
   c.restore();
 }
 
@@ -119,11 +125,11 @@ window.SH = {
     const cfg = SHORTS[CUR], c = SX; c.setTransform(1, 0, 0, 1, 0, 0);
     if (f >= PLAN.n) {
       const fl = PLAN.n - 1, m = frameToT(cfg, fl), p = PLAN.path[fl]; renderAt(m.T); compose(c, p);
-      endShort(c, (f - PLAN.n) / PLAN.end * 2.3, (f - PLAN.n) / SFPS);
+      endShort(c, (f - PLAN.n) / PLAN.end * 2.3, (f - PLAN.n) / SFPS, cfg.endText);
     } else {
       const m = frameToT(cfg, f), p = PLAN.path[f]; renderAt(m.T); compose(c, p);
       hook(c, cfg);
-      const ch = CHK.find(x => m.T >= x.t0 && m.T < x.t1); if (ch) caption(c, ch, m.T, p.fit ? 1420 : 1390);
+      const ch = CHK.find(x => m.T >= x.t0 && m.T < x.t1); if (ch) caption(c, ch, m.T, p.fit ? 1420 : 1390, cfg.capX);
     }
     return SCV.toDataURL('image/jpeg', q);
   },
