@@ -85,6 +85,7 @@ function setBedroom(c, o) {
   skyGrad(c, wy - 80, wy + wh, mode);
   if (mode === 'night') stars(c, 60, [wx, wy - 60, wx + ww, wy + 300], T);
   if (mode === 'dawn') sun(c, wx + ww * .62, wy + wh * .78, 70, 1);
+  if (o.centrale) centrale(c, wx + 150, wy + wh - 40, .34, T, o.centrale);
   skyline(c, wy + wh + 10, .55, mode === 'night' ? 'night' : 'day', T, 3, 2);
   if (o.rooftop != null) {
     c.fillStyle = '#0a0a0c'; c.fillRect(wx - 20, wy + wh - 150, ww + 40, 200);
@@ -261,14 +262,23 @@ function setEntrance(c, o) {
 
 // ---------- RUE D'AURUM (travelling, parallaxe) ----------
 function setStreet(c, o) {
-  const T = o.T || 0, scroll = o.scroll || 0, fl = 820;
-  skyGrad(c, -M, 700, 'day'); sun(c, 1500 - scroll * .05, 260, 90, 1);
-  c.save(); c.translate(-scroll * .15, 0); skyline(c, 640, 1.0, 'day', T, 11, 1); c.restore();
-  c.save(); c.translate(-scroll * .35, 0); skyline(c, 720, 1.25, 'day', T, 17, 2); c.restore();
+  const T = o.T || 0, scroll = o.scroll || 0, fl = 820, dusk = o.time === 'dusk';
+  skyGrad(c, -M, 700, dusk ? 'dusk' : 'day'); sun(c, 1500 - scroll * .05, dusk ? 600 : 260, dusk ? 150 : 90, 1);
+  c.save(); c.translate(-scroll * .15, 0); skyline(c, 640, 1.0, dusk ? 'night' : 'day', T, 11, 1); c.restore();
+  c.save(); c.translate(-scroll * .35, 0); skyline(c, 720, 1.25, dusk ? 'night' : 'day', T, 17, 2); c.restore();
+  if (o.centrale) { // la Centrale, au bout de la rue, devant la ville (un léger voile de distance)
+    centrale(c, (o.centraleX ?? 1350) - scroll * .08, 740, o.centraleS ?? .64, T, o.centrale);
+    c.save(); c.globalCompositeOperation = 'screen'; c.fillStyle = dusk ? 'rgba(90,50,30,.18)' : 'rgba(200,160,110,.16)'; c.fillRect(-M, 150, W + 2 * M, 600); c.restore();
+  }
   // façades de premier plan avec arches et auvents
   c.save(); c.translate(-scroll * .7, 0);
   for (let k = -2; k < 16; k++) {
     const x = k * 420, h = 560 + hash(k * 3.3) * 120, top = fl - h;
+    if (o.gap && x - scroll * .7 + 410 > o.gap[0] && x - scroll * .7 < o.gap[1]) { // ouverture (place / belvédère) : on voit l'horizon
+      const bal = rect(x - 6, fl - 96, 422, 96); paint(c, bal, { fill: '#2a1d10', dots: PAT.dark, dx: x + 200, da: .5, stroke: '#140d06', lw: 3 });
+      c.fillStyle = '#c9a063'; c.fillRect(x - 6, fl - 100, 422, 8); c.fillStyle = '#140d06'; for (let b = 0; b < 8; b++) c.fillRect(x + 14 + b * 52, fl - 88, 12, 80);
+      continue;
+    }
     const f = rect(x, top, 410, h); paint(c, f, { fill: goldGrad(c, x, x + 410, k % 2 ? 1 : 0), dots: PAT.dark, dx: x + 250, da: .55, stroke: '#140d06', lw: 3 });
     c.fillStyle = '#140d06'; c.fillRect(x, top, 410, 16);
     for (let j = 0; j < 3; j++) { const ax = x + 30 + j * 130, ay = top + 80; const a = new Path2D(); a.moveTo(ax, ay + 150); a.lineTo(ax, ay + 40); a.quadraticCurveTo(ax + 50, ay - 10, ax + 100, ay + 40); a.lineTo(ax + 100, ay + 150); a.closePath(); paint(c, a, { fill: hash(k * 7 + j) > .6 ? '#ffd79a' : '#2a1f14', stroke: '#140d06', lw: 3 }); }
@@ -284,6 +294,10 @@ function setStreet(c, o) {
       c.shadowColor = 'rgba(255,200,120,.9)'; c.shadowBlur = 12; c.fillStyle = '#f6d9a0';
       for (const sd of [-1, 1]) { c.save(); c.translate(sd * 20, -6); c.rotate(sd * .12); c.beginPath(); c.moveTo(-15, 0); c.quadraticCurveTo(0, -6, 15, 0); c.quadraticCurveTo(0, 3.5, -15, 0); c.fill(); c.restore(); }
       c.restore(); }
+    if (dusk) { // crépuscule : façades assombries, fenêtres allumées
+      c.save(); c.globalCompositeOperation = 'multiply'; c.fillStyle = '#93705a'; c.fillRect(x - 2, top - 2, 414, h + 4); c.restore();
+      c.save(); c.globalCompositeOperation = 'screen'; for (let j = 0; j < 3; j++) if (hash(k * 7 + j) > .6) glow(c, x + 80 + j * 130, top + 170, 120, 'rgba(255,200,120,A)', .45); c.restore();
+    }
     // lampadaire
     const lx = x + 405; c.fillStyle = '#140d06'; c.fillRect(lx - 5, fl - 420, 10, 420); c.beginPath(); c.arc(lx, fl - 430, 16, 0, TAU); c.fill(); glow(c, lx, fl - 430, 60, 'rgba(255,210,140,A)', .5);
   }
@@ -460,7 +474,7 @@ function titleCard(c, o) {
   c.save(); c.globalAlpha = a;
   const g = c.createLinearGradient(0, 470, 0, 600); g.addColorStop(0, '#fbe6b8'); g.addColorStop(.5, '#dcb172'); g.addColorStop(1, '#a87a42');
   txt(c, 'AURUM', 960, 600, 230, { fill: g, ls: 40, shadow: 'rgba(0,0,0,.8)', blur: 30, sy: 6 });
-  txt(c, 'ÉPISODE 1 — LE PREMIER JOUR', 960, 720, 40, { fill: '#e8dcc4', ls: 10, weight: 600 });
+  txt(c, o.sub || 'ÉPISODE 1 — LE PREMIER JOUR', 960, 720, 40, { fill: '#e8dcc4', ls: 10, weight: 600 });
   c.restore();
   dust(c, T, 60, 9, [0, 0, W, H], '245,205,135', .6 * k);
 }
@@ -471,6 +485,152 @@ function endCard(c, o) {
   txt(c, 'À SUIVRE', 960, 520, 130, { fill: '#dcb172', ls: 26, shadow: 'rgba(255,190,100,.35)', blur: 30, sy: 0 });
   c.restore();
   c.save(); c.globalAlpha = smooth(.45, 1, k);
-  txt(c, 'AURUM — ÉPISODE 2 : « N. »', 960, 640, 40, { fill: '#e8dcc4', ls: 8, weight: 600 });
+  txt(c, o.next || 'AURUM — ÉPISODE 2 : « N. »', 960, 640, 40, { fill: '#e8dcc4', ls: 8, weight: 600 });
+  c.restore();
+}
+
+// =====================================================================
+//  ÉPISODE 2
+// =====================================================================
+// la Centrale d'Aurum : silhouette industrielle, tour surmontée d'un anneau (éteint)
+function centrale(c, x, base, s, T, a = 1) {
+  c.save(); c.translate(x, base); c.scale(s, s); c.globalAlpha *= a;
+  const ink = '#0e0906', rim = 'rgba(232,190,120,.55)';
+  const body = new Path2D();
+  body.moveTo(-330, 0); body.lineTo(-330, -170); body.lineTo(-220, -210); body.lineTo(-220, -260); body.lineTo(-60, -260); body.lineTo(-60, -560);
+  body.lineTo(60, -560); body.lineTo(60, -260); body.lineTo(220, -260); body.lineTo(220, -190); body.lineTo(330, -150); body.lineTo(330, 0); body.closePath();
+  c.fillStyle = ink; c.fill(body); c.strokeStyle = rim; c.lineWidth = 3; c.stroke(body);
+  for (const sd of [-1, 1]) { // tours de refroidissement
+    const t = new Path2D(); const cx = sd * 430;
+    t.moveTo(cx - 110, 0); t.quadraticCurveTo(cx - 50, -150, cx - 80, -320); t.lineTo(cx + 80, -320); t.quadraticCurveTo(cx + 50, -150, cx + 110, 0); t.closePath();
+    c.fillStyle = ink; c.fill(t); c.stroke(t);
+  }
+  // l'anneau au sommet (une éclipse, éteinte) + un petit feu qui clignote
+  c.strokeStyle = '#2a1d10'; c.lineWidth = 22; c.beginPath(); c.arc(0, -650, 95, 0, TAU); c.stroke();
+  c.strokeStyle = rim; c.lineWidth = 3; c.beginPath(); c.arc(0, -650, 107, 0, TAU); c.stroke();
+  c.fillStyle = ink; c.beginPath(); c.arc(0, -650, 84, 0, TAU); c.fill();
+  c.fillStyle = ink; c.fillRect(-14, -560, 28, -10);
+  const bl = .5 + .5 * Math.sin(T * 3); glow(c, 0, -760, 40, 'rgba(255,190,110,A)', .7 * bl); c.fillStyle = `rgba(255,214,150,${.6 + .4 * bl})`; c.beginPath(); c.arc(0, -760, 6, 0, TAU); c.fill();
+  c.strokeStyle = ink; c.lineWidth = 6; c.beginPath(); c.moveTo(0, -745); c.lineTo(0, -560); c.stroke();
+  c.restore();
+}
+// bibliothèque du lycée : étagères, fenêtre haute, meuble d'archives à tiroirs
+function setLibrary(c, o) {
+  const T = o.T || 0, fl = 880;
+  wall(c, -M, fl, { c0: '#120c07', c1: '#2a1e12' });
+  // fenêtre haute en arc + rayons
+  const wx = 1180, wy = 110, ww = 280, wh = 560;
+  const win = new Path2D(); win.moveTo(wx, wy + wh); win.lineTo(wx, wy + 140); win.quadraticCurveTo(wx + ww / 2, wy - 40, wx + ww, wy + 140); win.lineTo(wx + ww, wy + wh); win.closePath();
+  c.save(); c.clip(win); skyGrad(c, wy - 40, wy + wh, 'day'); sun(c, wx + ww * .7, wy + 200, 60, 1); skyline(c, wy + wh + 10, .4, 'day', T, 23, 2); c.restore();
+  c.lineWidth = 14; c.strokeStyle = '#5a4026'; c.stroke(win); c.lineWidth = 4; c.strokeStyle = '#c9a063'; c.stroke(win);
+  c.strokeStyle = '#4a3420'; c.lineWidth = 8; c.beginPath(); c.moveTo(wx + ww / 2, wy + 30); c.lineTo(wx + ww / 2, wy + wh); c.moveTo(wx, wy + 330); c.lineTo(wx + ww, wy + 330); c.stroke();
+  // étagères
+  const cols = ['#5a4026', '#7a5a34', '#3a2a1a', '#a4824c', '#2a1f14', '#c9a063', '#6d5331', '#8a6a3d'];
+  for (let sh = 0; sh < 3; sh++) {
+    const x0 = 40 + sh * 360, w = 340, top = 120;
+    const fr = rect(x0, top, w, fl - top); paint(c, fr, { fill: '#2a1d10', dots: PAT.dark, dx: x0 + 200, da: .5, stroke: '#0c0804', lw: 4 });
+    for (let r = 0; r < 6; r++) {
+      const y = top + 30 + r * 122, bot = y + 104; let x = x0 + 18, k = 0;
+      while (x < x0 + w - 30) {
+        const bw = 20 + hash(sh * 97 + r * 13 + k) * 26, bh = 70 + hash(sh * 31 + r * 7 + k * 3) * 30, col = cols[Math.floor(hash(sh * 11 + r * 5 + k * 1.7) * cols.length)];
+        const lean = hash(sh + r * 3 + k * 5) > .93 ? .18 : 0;
+        c.save(); c.translate(x, bot); c.rotate(lean); const b = rect(0, -bh, bw, bh, 2); paint(c, b, { fill: col, stroke: '#0c0804', lw: 2 });
+        c.fillStyle = 'rgba(232,196,130,.55)'; c.fillRect(3, -bh + 12, bw - 6, 3); c.fillRect(3, -18, bw - 6, 3); c.restore();
+        x += bw + 2 + (lean ? 10 : 0); k++;
+      }
+      c.fillStyle = '#4a3420'; c.fillRect(x0 + 8, bot, w - 16, 14); c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(x0 + 8, bot + 14, w - 16, 6);
+    }
+  }
+  // meuble d'archives
+  const ax = 1520, ay = 330, aw = 360, ah = fl - ay;
+  const cab = rect(ax, ay, aw, ah, 6); paint(c, cab, { fill: '#3a2a1a', dots: PAT.dark, dx: ax + 220, da: .55, stroke: '#0c0804', lw: 4 });
+  c.fillStyle = '#c9a063'; c.font = '600 22px Oswald'; c.textAlign = 'center'; c.fillText('ARCHIVES', ax + aw / 2, ay - 14);
+  for (let r = 0; r < 5; r++) for (let k = 0; k < 3; k++) {
+    const dx = ax + 16 + k * 112, dy = ay + 16 + r * 104, open = (o.drawer && r === 2 && k === 1) ? o.drawer : 0;
+    const d = rect(dx, dy + open * 40, 104, 92, 4); paint(c, d, { fill: open ? '#5a4026' : '#4a3420', stroke: '#0c0804', lw: 3 });
+    c.fillStyle = '#e6dcc6'; c.fillRect(dx + 30, dy + 18 + open * 40, 44, 22); c.fillStyle = '#1b140c'; c.font = '600 12px Oswald'; c.fillText(String(1900 + r * 3 + k * 15 + 60), dx + 52, dy + 34 + open * 40);
+    c.fillStyle = '#d8b273'; c.beginPath(); c.arc(dx + 52, dy + 62 + open * 40, 7, 0, TAU); c.fill();
+    if (open) { const f = rect(dx + 6, dy + open * 40 - 30, 92, 34, 2); paint(c, f, { fill: '#d9ceb4', stroke: '#0c0804', lw: 2 }); }
+  }
+  floorWood(c, fl, { vx: 960, c0: '#3a2a1a' });
+  lightRays(c, wx + ww / 2, wy + 300, PI * .72, .45, 1300, .12, T);
+  dust(c, T, 70, 5, [600, 100, 1500, 900], '245,215,160', .5);
+}
+// coupure de journal (insert plein cadre)
+function newsChar(base, over) { return { ...base, ...over }; }
+function insertNewspaper(c, o) {
+  const T = o.T || 0;
+  c.fillStyle = vGrad(c, 0, H, [[0, '#1d150d'], [1, '#0b0805']]); c.fillRect(-M, -M, W + 2 * M, H + 2 * M);
+  glow(c, 960, 520, 900, 'rgba(255,200,120,A)', .22);
+  c.save(); c.translate(960, 540); c.rotate(-.025);
+  const p = rect(-640, -440, 1280, 900, 4); c.save(); c.shadowColor = 'rgba(0,0,0,.6)'; c.shadowBlur = 50; c.fillStyle = '#d9ceb4'; c.fill(p); c.restore();
+  paint(c, p, { fill: '#d9ceb4', dots: PAT.dark, dx: 300, da: .18, stroke: '#140d06', lw: 3 });
+  const ink = '#1b140c';
+  c.textAlign = 'center'; c.fillStyle = ink; c.font = '700 84px Oswald'; if ('letterSpacing' in c) c.letterSpacing = '10px'; c.fillText("L'ÉCHO D'AURUM", 0, -340); if ('letterSpacing' in c) c.letterSpacing = '0px';
+  c.fillRect(-600, -320, 1200, 4); c.fillRect(-600, -308, 1200, 2);
+  c.font = '600 22px Oswald'; c.fillText('ÉDITION SPÉCIALE  ·  14 OCTOBRE  ·  IL Y A TROIS ANS', 0, -280);
+  c.font = '700 76px Oswald'; c.fillText('AURUM PLONGÉE DANS LE NOIR', 0, -190);
+  c.font = 'italic 600 40px Georgia, serif'; c.fillText("La Centrale s'éteint sans explication", 0, -130);
+  // la photo
+  const px = -600, py = -90, pw = 700, ph = 440;
+  c.save(); const fr = rect(px, py, pw, ph); c.clip(fr);
+  c.fillStyle = vGrad(c, py, py + ph, [[0, '#b9ab8c'], [1, '#8f8065']]); c.fillRect(px, py, pw, ph);
+  centrale(c, px + pw * .5, py + ph - 70, .42, 0, 1);
+  c.fillStyle = '#7d6f55'; c.fillRect(px, py + ph - 80, pw, 80);
+  const eng = (col, hair) => newsChar(CHARS.dad, { top: { type: 'vest', color: col, shirt: '#cfc8b8' }, hair: { style: 'short', color: hair } });
+  const team = [[-250, eng('#4a4440', '#222'), .34], [-160, eng('#3a3836', '#555'), .36], [60, eng('#45403c', '#333'), .35], [150, eng('#3c3a38', '#777'), .33]];
+  for (const [dx, ch, sc] of team) drawPerson(c, ch, { x: px + pw / 2 + dx, y: py + ph - 20, s: sc, T: 0, expr: 'smile', noShadow: true });
+  // le père : au centre, visage découpé
+  const dadX = px + pw / 2 - 50, dadY = py + ph - 18, ds = .37;
+  drawPerson(c, CHARS.dad, { x: dadX, y: dadY, s: ds, T: 0, expr: 'smile', noShadow: true, armR: { tx: 180, ty: -300, b: -1 } });
+  // l'enfant aux cheveux blancs, de dos, à côté de lui
+  const kid = newsChar(CHARS.nox, { mask: false, top: { type: 'tshirt', color: '#3a3836' }, bodyS: .8, headS: 1.05 });
+  drawPerson(c, kid, { x: dadX + 75, y: dadY + 4, s: .27, T: 0, back: true, noShadow: true, armL: 'down', armR: 'down', glow: 0 });
+  if (o.kidGlow) { c.save(); c.globalCompositeOperation = 'screen'; glow(c, dadX + 75, dadY - 190, 90, 'rgba(255,220,160,A)', .35 * o.kidGlow); c.restore(); }
+  // effet photo imprimée
+  c.fillStyle = 'rgba(120,96,60,.28)'; c.fillRect(px, py, pw, ph);
+  c.globalAlpha = .35; c.fillStyle = PAT.dark; c.fillRect(px, py, pw, ph); c.globalAlpha = 1;
+  c.restore();
+  // le trou : visage découpé
+  const hx = dadX, hy = dadY - 622 * ds * 1.1 + 4, hr = 26;
+  const hole = new Path2D(); for (let k = 0; k <= 18; k++) { const a = k / 18 * TAU, r = hr * (1 + (hash(k * 3.7) - .5) * .35); k ? hole.lineTo(hx + Math.cos(a) * r * .85, hy + Math.sin(a) * r) : hole.moveTo(hx + Math.cos(a) * r * .85, hy + Math.sin(a) * r); } hole.closePath();
+  c.fillStyle = '#0b0805'; c.fill(hole); c.strokeStyle = '#efe6d2'; c.lineWidth = 3; c.stroke(hole);
+  c.strokeStyle = ink; c.lineWidth = 3; c.strokeRect(px, py, pw, ph);
+  c.font = 'italic 500 22px Georgia, serif'; c.textAlign = 'left'; c.fillText("L'équipe de la Centrale, la veille de la panne.", px, py + ph + 34);
+  // colonnes de texte
+  c.fillStyle = 'rgba(27,20,12,.55)';
+  for (let col = 0; col < 2; col++) for (let k = 0; k < 15; k++) { const x0 = 140 + col * 240, w = 210 - (hash(col * 31 + k) > .85 ? 80 : 0); c.fillRect(x0, -80 + k * 30, w, 9); }
+  c.restore();
+}
+// le badge d'accès (recto / verso)
+function badgeItem(c, side) { c.save(); c.translate(0, 34); c.rotate(-.15 * side); const p = rect(-34, -4, 68, 44, 5); paint(c, p, { fill: '#1d1d22', stroke: '#c9a063', lw: 3 }); c.strokeStyle = '#c9a063'; c.lineWidth = 2; c.beginPath(); c.arc(-16, 14, 8, 0, TAU); c.stroke(); c.restore(); }
+function insertBadge(c, o) {
+  const T = o.T || 0, flip = o.flip || 0;
+  c.fillStyle = vGrad(c, 0, H, [[0, '#2a1a10'], [1, '#08060a']]); c.fillRect(-M, -M, W + 2 * M, H + 2 * M);
+  glow(c, 960, 540, 800, 'rgba(255,170,90,A)', .25);
+  c.save(); c.translate(960, 540); c.rotate(-.04 + Math.sin(T * .6) * .01);
+  const sx = Math.cos(flip * PI); c.scale(Math.max(.02, Math.abs(sx)), 1);
+  const card = rect(-400, -250, 800, 500, 30);
+  c.save(); c.shadowColor = 'rgba(0,0,0,.7)'; c.shadowBlur = 50; c.fillStyle = '#18181c'; c.fill(card); c.restore();
+  if (sx >= 0) {
+    paint(c, card, { fill: '#1b1b20', dots: PAT.dark2, dx: 200, da: .4, stroke: '#c9a063', lw: 6 });
+    c.strokeStyle = 'rgba(201,160,99,.5)'; c.lineWidth = 2; c.strokeRect(-372, -222, 744, 444);
+    // logo éclipse
+    c.save(); c.translate(-280, -130); c.shadowColor = 'rgba(255,190,100,.8)'; c.shadowBlur = 16; c.strokeStyle = '#e2bd79'; c.lineWidth = 7; c.beginPath(); c.arc(0, 0, 52, 0, TAU); c.stroke(); c.shadowBlur = 0; c.fillStyle = '#0a0a0c'; c.beginPath(); c.arc(4, 0, 44, 0, TAU); c.fill(); c.restore();
+    txt(c, "CENTRALE D'AURUM", -200, -118, 58, { fill: '#e2bd79', align: 'left', ls: 4 });
+    txt(c, 'ACCÈS · NIVEAU 3', -200, -62, 34, { fill: '#efe3cb', align: 'left', ls: 6, weight: 600 });
+    // emplacement photo, arraché
+    const ph = rect(140, -40, 200, 240, 6); paint(c, ph, { fill: '#2a2a30', stroke: '#c9a063', lw: 3 });
+    c.fillStyle = '#e6dcc6'; c.beginPath(); c.moveTo(140, -40); c.lineTo(230, -40); c.lineTo(205, -12); c.lineTo(222, 6); c.lineTo(180, 22); c.lineTo(140, 14); c.closePath(); c.fill();
+    txt(c, 'N° 0347', -340, 40, 30, { fill: '#bfae8f', align: 'left', ls: 4, weight: 600 });
+    c.fillStyle = '#c9a063'; for (let k = 0; k < 38; k++) { const w = hash(k * 5.1) > .6 ? 6 : 3; c.fillRect(-340 + k * 11, 120, w, 70); }
+  } else {
+    paint(c, card, { fill: '#e6dcc6', dots: PAT.dark, dx: 200, da: .15, stroke: '#c9a063', lw: 6 });
+    const wr = o.write ?? 1;
+    c.save(); c.beginPath(); c.rect(-380, -240, 760 * wr, 480); c.clip();
+    c.fillStyle = '#2a1a0c'; c.textAlign = 'center'; c.font = 'italic 600 92px Georgia, serif'; c.fillText('Minuit.', 0, -40); c.fillText('Porte Est.', 0, 80);
+    c.restore();
+    if ((o.sign ?? 0) > .5) { c.save(); c.fillStyle = '#9a7440'; c.font = 'italic 700 60px Georgia, serif'; c.textAlign = 'right'; c.fillText('— N.', 340, 200); c.restore(); }
+  }
   c.restore();
 }

@@ -315,6 +315,13 @@ function hairFront(c, ch, o, hy) {
   const { rx, ry } = headDims(ch);
   if (o.back) {
     if (h.style === 'long') { const p = rect(-64, hy - 68, 128, 280, [64, 64, 24, 24]); paint(c, p, { fill: col, rim: '#4a4a4a', rx: 3, stroke: '#000', lw: 2.6 }); c.strokeStyle = '#2c2c2c'; c.lineWidth = 2.2; for (const x of [-30, -8, 14, 34]) { c.beginPath(); c.moveTo(x, hy - 40); c.quadraticCurveTo(x + 6, hy + 80, x - 2, hy + 200); c.stroke(); } }
+    else if (h.style === 'messy') { // de dos : crâne couvert de mèches en pointes
+      const cap = new Path2D(); cap.moveTo(-rx - 4, hy + 24);
+      const pts = [[-rx - 14, hy - 10], [-rx - 4, hy - 40], [-rx - 16, hy - 62], [-26, hy - ry - 12], [-30, hy - ry - 32], [-4, hy - ry - 14], [10, hy - ry - 40], [24, hy - ry - 10], [46, hy - ry - 24], [rx - 2, hy - ry + 4], [rx + 18, hy - 46], [rx + 4, hy - 22], [rx + 14, hy + 4], [rx + 2, hy + 26], [rx - 14, hy + 44], [12, hy + 38], [-6, hy + 52], [-20, hy + 38], [-rx + 10, hy + 46]];
+      for (const [x, y] of pts) cap.lineTo(x, y); cap.closePath();
+      paint(c, cap, { fill: col, rim: '#fbf7ee', rx: 3, dots: PAT.dark2, dx: 10, da: .35, stroke: '#000', lw: 2.6 });
+      c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = 2; for (const [x0, y0, x1, y1] of [[-24, hy - 50, -10, hy - 10], [8, hy - 58, 4, hy - 14], [30, hy - 44, 22, hy - 4]]) { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
+    }
     else { const p = new Path2D(); p.ellipse(0, hy, rx + 4, ry + 4, 0, 0, TAU); paint(c, p, { fill: col, stroke: '#000', lw: 2.6 }); }
     return;
   }
