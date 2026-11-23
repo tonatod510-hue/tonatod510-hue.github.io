@@ -197,7 +197,7 @@ const THUMBS = {
   s1: { T: 178.3, on: 'nox', title: ["PERSONNE N'A", 'JAMAIS VU', 'SON VISAGE'], y: 360 },
   s2: { T: 115.9, on: 'vic', title: ['PREMIER JOUR,', 'PREMIÈRE', 'ENNEMIE'], y: 1400 },
   s3: { T: 217.6, on: 'aya', title: ['SON PÈRE', 'A DISPARU…'], y: 330, note: 210.9 },
-  e2s1: { T: 84.9, on: 'vic', title: ['LA QUESTION', 'INTERDITE'], y: 1400 },
+  e2s1: { T: 80.6, on: 'morel', title: ['LA QUESTION', 'INTERDITE'], y: 1400 },
   e2s2: { T: 122.3, on: '-', title: ["QUELQU'UN A", 'DÉCOUPÉ', 'SON VISAGE'], y: 330 },
   e2s3: { T: 147.6, on: 'nox', title: ["IL L'ATTENDAIT", 'AU COIN', 'DE LA RUE'], y: 330 },
 };
