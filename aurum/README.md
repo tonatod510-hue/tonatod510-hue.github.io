@@ -38,7 +38,7 @@ ffmpeg -i video.mp4 -i mix.wav -c:v copy -c:a aac -af loudnorm=I=-16:TP=-1.5 epi
 Shorts (après l'étape 3) :
 
 ```bash
-python3 engine/build.py shorts.html core.js,people.js,sets.js,vo.js,ep01.js,main.js,shorts.js polices/
+python3 engine/build.py shorts.html core.js,people.js,sets.js,vo.js,episode.js,ep01.js,main.js,shorts.js polices/
 node engine/render_short.js shorts.html s1 short1.mp4 4   # s1, s2, s3 : voir SHORTS dans shorts.js
 ```
 
