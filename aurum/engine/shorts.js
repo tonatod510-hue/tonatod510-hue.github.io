@@ -107,9 +107,11 @@ function chunks(cfg) {
   const out = [];
   for (const l of EPI.lines) {
     if (!cfg.segs.some(([a, b]) => l.t0 < b && l.t1 > a)) continue;
-    const words = l.text.replace(/\s+/g, ' ').trim().split(' '), parts = []; let cur = '';
+    // la ponctuation isolée (« » … ) reste collée au mot voisin : jamais de sous-titre « » » tout seul
+    const words = l.text.replace(/\s+/g, ' ').trim().split(' ').reduce((acc, w) => { if (/^[»!?:;.…]+$/.test(w) && acc.length) acc[acc.length - 1] += ' ' + w; else if (acc.length && acc[acc.length - 1] === '«') acc[acc.length - 1] += ' ' + w; else acc.push(w); return acc; }, []), parts = []; let cur = '';
     for (const w of words) { const nx = cur ? cur + ' ' + w : w; if (cur && nx.length > 20) { parts.push(cur); cur = w; } else cur = nx; if (/[.!?…]»?$/.test(w) && cur.length >= 10) { parts.push(cur); cur = ''; } }
     if (cur) parts.push(cur);
+    if (l.text.length <= 28) parts.splice(0, parts.length, l.text.replace(/\s+/g, ' ').trim()); // réplique courte : un seul sous-titre
     const tot = parts.reduce((s, p) => s + p.length + 4, 0); let t = l.t0;
     for (const p of parts) { const d = (l.t1 - l.t0) * (p.length + 4) / tot; out.push({ t0: t, t1: t + d, text: p, nar: l.who === 'N' }); t += d; }
   }
