@@ -33,6 +33,14 @@ const SHORTS = {
     focus: { 'Nox entre': [[0, 'nox']], "Personne ne m'avait parlé de lui": [[0, 'nox'], [2.3, 'aya']], 'Le mot': [[0, 'FIT']], 'À la fenêtre': [[0, 'aya'], [1.1, ['aya', 'nox']], [3.9, 'aya']] },
     tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['ÉPISODE 2 : « N. »', 'ABONNE-TOI POUR LA SUITE'], endF: 96, // carte de fin de 4 s : la partie dépasse bien 1 min
   },
+  // ---------- ÉPISODE 2 (page construite avec vo2.js + ep02.js) ----------
+  e2s1: { title: ['LA QUESTION', 'INTERDITE'], tag: 'AURUM  ·  ÉPISODE 2', segs: [[59.72, 89.37], [93.24, 99.84]], focus: null, endText: ["L'ÉPISODE 2 EN ENTIER", 'SUR LA CHAÎNE'] },
+  e2s2: { title: ["QUELQU'UN A DÉCOUPÉ", 'SON VISAGE'], tag: 'AURUM  ·  ÉPISODE 2', segs: [[99.84, 130.78]], focus: null, endText: ["L'ÉPISODE 2 EN ENTIER", 'SUR LA CHAÎNE'] },
+  e2s3: { title: ["IL L'ATTENDAIT", 'AU COIN DE LA RUE'], tag: 'AURUM  ·  ÉPISODE 2', segs: [[130.78, 159.62]], focus: null, endText: ["L'ÉPISODE 2 EN ENTIER", 'SUR LA CHAÎNE'] },
+  e2p1: { title: ['ÉPISODE 2', 'PARTIE 1'], tag: 'AURUM  ·  ÉPISODE 2  ·  PARTIE 1/2', hookFade: 1.8, segs: [[0, 11.24], [17.24, 99.84]], focus: null,
+    tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['PARTIE 2', 'ABONNE-TOI POUR LA SUITE'] },
+  e2p2: { title: ['ÉPISODE 2', 'PARTIE 2'], tag: 'AURUM  ·  ÉPISODE 2  ·  PARTIE 2/2', hookFade: 1.8, segs: [[99.84, 177.32]], focus: null,
+    tagY: 255, titleY: 380, capX: 500, endBig: 'À SUIVRE', endText: ['ÉPISODE 3 : « LA PORTE EST »', 'ABONNE-TOI POUR LA SUITE'], endF: 96 },
   s2: {
     title: ['PREMIER JOUR,', 'PREMIÈRE ENNEMIE'],
     segs: [[98.52, 140.49]],
@@ -44,6 +52,14 @@ const SHORTS = {
     focus: { 'La photo de famille': [[0, 'photo']], 'Le mot': [[0, 'FIT']], 'À la fenêtre': [[0, 'aya'], [1.1, ['aya', 'nox']], [3.9, 'aya']] },
   },
 };
+const EP2_FOCUS = {
+  'Le toit vide': [[0, 1500]], 'Générique': [[0, 'FIT']], 'Jamais': [[0, 'photo']], 'Sur le chemin': [[0, 'aya'], [3.0, 1450]],
+  'La place vide': [[0, 1270]], 'Le tiroir': [[0, 1530]], 'Le journal': [[0, 'FIT']], 'La photo': [[0, 960]], 'Ces cheveux': [[0, 960]],
+  'Un livre tombe': [[0, 'aya'], [.3, 'nox'], [1.3, 'aya']], 'La sortie': [[0, 'nox'], [1.8, 'aya']], 'La poursuite': [[0, 'nox'], [1.6, 'aya']],
+  'Derrière elle': [[0, ['aya', 'nox']]], 'Le badge': [[0, 'FIT']], 'Il montre la Centrale': [[0, 1150], [.8, 1320], [2.5, 'aya']],
+  'Le dos du badge': [[0, 'FIT']], 'Minuit': [[0, 960]],
+};
+for (const k of ['e2s1', 'e2s2', 'e2s3', 'e2p1', 'e2p2']) SHORTS[k].focus = EP2_FOCUS;
 const SFPS = 24, END_F = 62, OW = 1080, OH = 1920, CW = H * 9 / 16; // largeur du recadrage 9:16 en unités 1920×1080
 const MAIN = ['aya', 'nox', 'nina', 'vic', 'morel', 'mom', 'timi'];
 const SCV = document.createElement('canvas'); SCV.width = OW; SCV.height = OH; const SX = SCV.getContext('2d');
@@ -115,7 +131,7 @@ function hook(c, cfg, t = 0) {
     const g = c.createLinearGradient(0, 0, 0, 560); g.addColorStop(0, 'rgba(0,0,0,.82)'); g.addColorStop(.6, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, OW, 560);
     txt(c, cfg.tag || 'AURUM  ·  ÉPISODE 1', OW / 2, cfg.tagY ?? 200, 30, { fill: '#e8dcc4', ls: 8, weight: 600 });
     const gt = c.createLinearGradient(0, 240, 0, 420); gt.addColorStop(0, '#fbe6b8'); gt.addColorStop(.5, '#dcb172'); gt.addColorStop(1, '#a87a42');
-    cfg.title.forEach((ln, i) => txt(c, ln, OW / 2, (cfg.titleY ?? 310) + i * 96, 120, { fill: gt, ls: 3, shadow: 'rgba(0,0,0,.9)', blur: 18, sy: 4 }));
+    cfg.title.forEach((ln, i) => txt(c, ln, OW / 2, (cfg.titleY ?? 310) + i * 128, 120, { fill: gt, ls: 3, shadow: 'rgba(0,0,0,.9)', blur: 18, sy: 4 }));
     c.restore(); return;
   }
   c.save(); c.globalAlpha = .45 + .55 * big;
@@ -181,6 +197,9 @@ const THUMBS = {
   s1: { T: 178.3, on: 'nox', title: ["PERSONNE N'A", 'JAMAIS VU', 'SON VISAGE'], y: 360 },
   s2: { T: 115.9, on: 'vic', title: ['PREMIER JOUR,', 'PREMIÈRE', 'ENNEMIE'], y: 1400 },
   s3: { T: 217.6, on: 'aya', title: ['SON PÈRE', 'A DISPARU…'], y: 330, note: 210.9 },
+  e2s1: { T: 84.9, on: 'vic', title: ['LA QUESTION', 'INTERDITE'], y: 1400 },
+  e2s2: { T: 122.3, on: '-', title: ["QUELQU'UN A", 'DÉCOUPÉ', 'SON VISAGE'], y: 330 },
+  e2s3: { T: 147.6, on: 'nox', title: ["IL L'ATTENDAIT", 'AU COIN', 'DE LA RUE'], y: 330 },
 };
 function thumbTitle(c, lines, y0) {
   const top = y0 - 150, bot = y0 + lines.length * 150 + 20;
